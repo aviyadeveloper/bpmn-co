@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/package.json",
   "name": "diagramer",
   "version": "1.0.0",
   "description": "A collaborative diagramming tool for BPMN diagrams, allowing live collaboration from multiple users.",
