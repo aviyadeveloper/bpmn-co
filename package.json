@@ -15,6 +15,12 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "test:client": "cd client && npm test"
+    "run:client": "cd client && npm run dev",
+    "test:client": "cd client && npm test",
+    "run:server": "cd server && uv run fastapi dev main.py",
+    "dev": "concurrently \"npm run run:server\" \"npm run run:client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
