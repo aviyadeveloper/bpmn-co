@@ -2,49 +2,18 @@ import { useEffect, useRef, useState } from "react";
 import { useBpmnModeler } from "../hooks/useBpmnModeler";
 import { useWebSocket } from "../hooks/useWebSocket";
 import { ConnectionStatusIndicator } from "./ConnectionStatusIndicator";
-
-const WS_URL = "ws://localhost:8000/ws";
-
-// Default empty BPMN diagram
-const EMPTY_DIAGRAM = `<?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-  id="Definitions_1"
-  targetNamespace="http://bpmn.io/schema/bpmn">
-  <bpmn:process id="Process_1" isExecutable="false">
-    <bpmn:startEvent id="StartEvent_1" />
-  </bpmn:process>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
-    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_1">
-      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
-        <dc:Bounds x="152" y="102" width="36" height="36" />
-      </bpmndi:BPMNShape>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-</bpmn:definitions>`;
+import { EMPTY_DIAGRAM, WS_URL } from "./constants";
 
 export default function BpmnEditor() {
-  // Track last activity for connection status
   const [lastActivity, setLastActivity] = useState<number>(Date.now());
-
-  // Track current XML (will be synced from server)
   const [currentXml, setCurrentXml] = useState<string>(EMPTY_DIAGRAM);
-
-  // Track if we've received initial sync from server
   const [hasInitialSync, setHasInitialSync] = useState<boolean>(false);
-
-  // Container ref for BPMN modeler
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Container state to trigger modeler initialization when DOM is ready
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
   // Update container state when ref is set
   useEffect(() => {
     if (containerRef.current && !container) {
-      console.log("📦 Container ref is ready");
       setContainer(containerRef.current);
     }
   }, [container]);
@@ -55,6 +24,7 @@ export default function BpmnEditor() {
     autoReconnect: true,
     onMessage: (message) => {
       console.log("📥 Received message from server");
+      console.log(message);
       setLastActivity(Date.now());
     },
     onError: (error, errorInfo) => {

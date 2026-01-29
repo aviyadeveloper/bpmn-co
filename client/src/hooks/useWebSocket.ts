@@ -102,28 +102,13 @@ export function useWebSocket(
     onMessage,
   } = config;
 
-  // WebSocket instance reference
   const wsRef = useRef<WebSocket | null>(null);
-
-  // Track ready state (default: CLOSED = 3)
   const [readyState, setReadyState] = useState<number>(WebSocket.CLOSED);
-
-  // Track reconnection attempts
   const [reconnectCount, setReconnectCount] = useState<number>(0);
-
-  // Track last error
   const [lastError, setLastError] = useState<WebSocketError | null>(null);
-
-  // Track last message
   const [lastMessage, setLastMessage] = useState<string | null>(null);
-
-  // Ref to track reconnection count synchronously (for checking limits)
   const reconnectCountRef = useRef<number>(0);
-
-  // Reconnection timer reference
   const reconnectTimerRef = useRef<number | null>(null);
-
-  // Flag to track if close was intentional (manual close)
   const intentionalCloseRef = useRef<boolean>(false);
 
   /**
@@ -157,20 +142,17 @@ export function useWebSocket(
    * Attempt to reconnect with backoff
    */
   const scheduleReconnect = () => {
-    // Don't reconnect if it was an intentional close
     if (intentionalCloseRef.current) {
       console.log("[useWebSocket] Skipping reconnect (intentional close)");
       return;
     }
 
-    // Check if we'll exceed max attempts with the NEXT attempt (use ref for sync check)
     const nextAttempt = reconnectCountRef.current + 1;
     if (nextAttempt > maxReconnectAttempts) {
       console.log("[useWebSocket] Max reconnect attempts reached");
       return;
     }
 
-    // Don't reconnect if auto-reconnect is disabled
     if (!autoReconnect) {
       console.log("[useWebSocket] Auto-reconnect is disabled");
       return;
@@ -212,7 +194,6 @@ export function useWebSocket(
 
       // Handle connection open
       ws.onopen = () => {
-        console.log("[useWebSocket] Connection opened");
         setReadyState(WebSocket.OPEN);
         // Clear any previous errors on successful connection
         setLastError(null);

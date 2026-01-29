@@ -3,12 +3,12 @@ import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 
-import BpmnEditor from "./components/BpmnEditor";
+import { BpmnCollaborativeEditor } from "./components/BpmnCollaborativeEditor";
 
 function App() {
   return (
-    <div style={{ height: "80vh", width: "80vw" }}>
-      <BpmnEditor />
+    <div style={{ height: "100vh", width: "100vw", margin: 0, padding: 0 }}>
+      <BpmnCollaborativeEditor />
     </div>
   );
 }
