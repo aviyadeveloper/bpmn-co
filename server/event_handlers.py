@@ -175,8 +175,10 @@ async def handle_json_validation(websocket: WebSocket, data: Any) -> Union[
 async def handle_flush_user_data(user_id: str):
     """Helper to remove user data on disconnect."""
     try:
-        await state_manager.remove_user(user_id)
+        # Clear locks first (requires user to exist)
         await state_manager.clear_locks_by_user(user_id)
+        # Then remove user
+        await state_manager.remove_user(user_id)
 
         # Broadcast updated state to all clients
         updates = [

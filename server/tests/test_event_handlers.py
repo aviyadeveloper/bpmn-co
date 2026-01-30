@@ -398,8 +398,8 @@ async def test_handle_flush_user_data_success():
     
     with patch("server.event_handlers.state_manager") as mock_state, \
          patch("server.event_handlers.connection_manager") as mock_conn:
-        mock_state.remove_user = AsyncMock()
-        mock_state.clear_locks_by_user = AsyncMock()
+        mock_state.clear_locks_by_user = AsyncMock()  # Called first now
+        mock_state.remove_user = AsyncMock()  # Called second
         mock_state.get_users = MagicMock(return_value={})
         mock_state.get_locked_elements = MagicMock(return_value={})
         mock_conn.broadcast = AsyncMock()
@@ -407,9 +407,9 @@ async def test_handle_flush_user_data_success():
         # Act
         await handle_flush_user_data(user_id)
 
-        # Assert
-        mock_state.remove_user.assert_called_once_with(user_id)
+        # Assert - Order matters: clear_locks first, then remove_user
         mock_state.clear_locks_by_user.assert_called_once_with(user_id)
+        mock_state.remove_user.assert_called_once_with(user_id)
         assert mock_conn.broadcast.call_count == 2  # Users and locks updates
 
 
@@ -421,16 +421,20 @@ async def test_handle_flush_user_data_handles_error():
     
     with patch("server.event_handlers.state_manager") as mock_state, \
          patch("server.event_handlers.connection_manager") as mock_conn:
-        mock_state.remove_user = AsyncMock(
+        # Mock clear_locks_by_user to raise error (happens first now)
+        mock_state.clear_locks_by_user = AsyncMock(
             side_effect=ValueError("User does not exist")
         )
+        mock_state.remove_user = AsyncMock()
         mock_conn.broadcast = AsyncMock()
 
         # Act - Should not raise exception
         await handle_flush_user_data(user_id)
 
-        # Assert - Error is caught, no crash
-        mock_state.remove_user.assert_called_once()
+        # Assert - Error is caught, clear_locks was attempted
+        mock_state.clear_locks_by_user.assert_called_once_with(user_id)
+        # remove_user should not be called because clear_locks raised error
+        mock_state.remove_user.assert_not_called()
 
 
 # ==========================================
