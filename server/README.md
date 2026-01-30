@@ -140,7 +140,11 @@ All state modifications are protected by `asyncio.Lock` to ensure thread safety 
 uv sync
 
 # Run the server
-uv run python -m server.main
+uv run fastapi dev ./main.py --reload
+
+# or just
+
+make run-dev
 ```
 
 The server will start on `http://localhost:8000` by default.
@@ -153,11 +157,14 @@ The server will start on `http://localhost:8000` by default.
 # Run all tests
 uv run pytest server/tests/ -v
 
-# Run specific test file
-uv run pytest server/tests/test_state_manager.py -v
+# or just
+make test
 
 # Run with coverage
 uv run pytest server/tests/ --cov=server --cov-report=html
+
+# or just
+make test-coverage
 ```
 
 ## Future Improvements
