@@ -1,6 +1,6 @@
 # BPMN Collaborative Editing Server
 
-A production-ready WebSocket server for real-time collaborative BPMN diagram editing. Built with FastAPI, featuring thread-safe state management, comprehensive error handling, and full test coverage.
+A WebSocket server for real-time collaborative BPMN diagram editing. Built with FastAPI, featuring thread-safe state management, comprehensive error handling, and full test coverage.
 
 ## Features
 
