@@ -35,17 +35,16 @@ async def handle_initial_connection_event(
 
 
 async def handle_xml_update_event(websocket: WebSocket, message: Any) -> None:
+    try:
+        xml = await state_manager.update_xml(message.get("xml"))
 
-    update = await state_manager.update_xml(message.get("xml"))
-
-    if not update["success"]:
-        error_message = json.dumps({"type": "error", "message": update["error"]})
+        # Broadcast updated XML to all other clients
+        await connection_manager.broadcast(
+            json.dumps({"type": "xml_update", "xml": xml}), exclude=websocket
+        )
+    except ValueError as e:
+        error_message = json.dumps({"type": "error", "message": str(e)})
         await connection_manager.send_direct_message(websocket, error_message)
-
-    # Broadcast updated XML to all other clients
-    await connection_manager.broadcast(
-        json.dumps({"type": "xml_update", "xml": update["xml"]}), exclude=websocket
-    )
 
 
 async def handle_user_name_update_event(
@@ -54,16 +53,15 @@ async def handle_user_name_update_event(
     """
     Update user's name and broadcast updated user list to others.
     """
-
-    update = await state_manager.update_user_name(user_id, message.get("name"))
-    if not update["success"]:
-        await connection_manager.send_direct_message(
-            websocket, json.dumps({"type": "error", "message": "Name update failed"})
-        )
-    else:
+    try:
+        users = await state_manager.update_user_name(user_id, message.get("name"))
         await connection_manager.broadcast(
-            json.dumps({"type": "users_update", "users": state_manager.get_users()}),
+            json.dumps({"type": "users_update", "users": users}),
             exclude=None,
+        )
+    except ValueError as e:
+        await connection_manager.send_direct_message(
+            websocket, json.dumps({"type": "error", "message": str(e)})
         )
 
 
@@ -72,31 +70,18 @@ async def handle_element_select_event(user_id: str, message: Any) -> None:
     Clear any previous locks and lock new elements for the user.
     broadcast updated lock state to all clients (including acting user).
     """
-    clear = await state_manager.clear_locks_by_user(user_id)
+    try:
+        await state_manager.clear_locks_by_user(user_id)
 
-    # Lock new elements
-    if clear["success"]:
+        # Lock new elements
         for element_id in message.get("element_ids", []):
-            await state_manager.lock_element(user_id=user_id, element_id=element_id)
+            try:
+                await state_manager.lock_element(user_id=user_id, element_id=element_id)
+            except ValueError as e:
+                # Element already locked, skip it
+                print(f"Could not lock element {element_id}: {e}")
 
-    # Broadcast updated lock state to all user including acting user
-    await connection_manager.broadcast(
-        json.dumps(
-            {
-                "type": "locked_elements_update",
-                "locked_elements": state_manager.get_locked_elements(),
-            }
-        ),
-        exclude=None,
-    )
-
-
-async def handle_element_deselect_event(user_id: str, message: Any) -> None:
-    update = await state_manager.unlock_element(
-        user_id=user_id, element_id=message.get("element_id")
-    )
-    if update["success"]:
-        # Broadcast updated lock state to all clients
+        # Broadcast updated lock state to all user including acting user
         await connection_manager.broadcast(
             json.dumps(
                 {
@@ -106,6 +91,27 @@ async def handle_element_deselect_event(user_id: str, message: Any) -> None:
             ),
             exclude=None,
         )
+    except ValueError as e:
+        print(f"Error in handle_element_select_event: {e}")
+
+
+async def handle_element_deselect_event(user_id: str, message: Any) -> None:
+    try:
+        locked_elements = await state_manager.unlock_element(
+            user_id=user_id, element_id=message.get("element_id")
+        )
+        # Broadcast updated lock state to all clients
+        await connection_manager.broadcast(
+            json.dumps(
+                {
+                    "type": "locked_elements_update",
+                    "locked_elements": locked_elements,
+                }
+            ),
+            exclude=None,
+        )
+    except ValueError as e:
+        print(f"Error in handle_element_deselect_event: {e}")
 
 
 async def handle_json_validation(websocket: WebSocket, data: Any) -> Any:
@@ -119,17 +125,20 @@ async def handle_json_validation(websocket: WebSocket, data: Any) -> Any:
 
 async def handle_flush_user_data(user_id: str):
     """Helper to remove user data on disconnect."""
-    await state_manager.remove_user(user_id)
-    await state_manager.clear_locks_by_user(user_id)
+    try:
+        await state_manager.remove_user(user_id)
+        await state_manager.clear_locks_by_user(user_id)
 
-    # Broadcast updated state to all clients
-    updates = [
-        {"type": "users_update", "users": state_manager.get_users()},
-        {
-            "type": "locked_elements_update",
-            "locked_elements": state_manager.get_locked_elements(),
-        },
-    ]
+        # Broadcast updated state to all clients
+        updates = [
+            {"type": "users_update", "users": state_manager.get_users()},
+            {
+                "type": "locked_elements_update",
+                "locked_elements": state_manager.get_locked_elements(),
+            },
+        ]
 
-    for update in updates:
-        await connection_manager.broadcast(json.dumps(update), exclude=None)
+        for update in updates:
+            await connection_manager.broadcast(json.dumps(update), exclude=None)
+    except Exception as e:
+        print(f"Error flushing user data for user {user_id}: {e}")

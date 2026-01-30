@@ -9,24 +9,6 @@ class User(TypedDict):
     name: str
 
 
-class UpdateXMLResponse(TypedDict):
-    success: bool
-    xml: str | None
-    error: str | None
-
-
-class AddUserResponse(TypedDict):
-    success: bool
-    users: list[User] | None
-    error: str | None
-
-
-class LockUnlockElementResponse(TypedDict):
-    success: bool
-    locked_elements: dict[str, str] | None
-    error: str | None
-
-
 class StateManager:
     """
     The state manager is reposnsible for managing the state of the collaborative server.
@@ -63,89 +45,58 @@ class StateManager:
     def get_xml(self) -> str:
         return self.xml
 
-    async def update_xml(self, new_xml: str) -> UpdateXMLResponse:
+    async def update_xml(self, new_xml: str) -> str:
         async with self._lock:
-            try:
-                # Guards
-                if not is_valid_xml(new_xml):
-                    raise ValueError("Invalid XML provided")
+            # Guards
+            if not is_valid_xml(new_xml):
+                raise ValueError("Invalid XML provided")
 
-                # Act
-                self.xml = new_xml
+            # Act
+            self.xml = new_xml
 
-                # Response
-                return {
-                    "success": True,
-                    "xml": self.xml,
-                    "error": None,
-                }
-            except Exception as e:
-                return {"success": False, "xml": None, "error": str(e)}
+            # Response
+            return self.xml
 
     # Users management
 
     def get_users(self) -> list[User]:
         return self.users
 
-    async def add_user(self, id: str, name: str) -> AddUserResponse:
+    async def add_user(self, id: str, name: str) -> dict[str, str]:
         async with self._lock:
-            try:
-                # Guards
-                if id in self.users:
-                    raise ValueError("User with this ID already exists")
+            # Guards
+            if id in self.users:
+                raise ValueError("User with this ID already exists")
 
-                # Act
-                self.users[id] = name
+            # Act
+            self.users[id] = name
 
-                # Response
-                return {
-                    "success": True,
-                    "users": self.users,
-                    "error": None,
-                }
+            # Response
+            return self.users
 
-            except Exception as e:
-                return {"success": False, "users": None, "error": str(e)}
-
-    async def remove_user(self, id: str) -> None:
+    async def remove_user(self, id: str) -> dict[str, str]:
         async with self._lock:
-            try:
-                # Guards
-                if self.users.get(id) is None:
-                    raise ValueError("User with this ID does not exist")
+            # Guards
+            if self.users.get(id) is None:
+                raise ValueError("User with this ID does not exist")
 
-                # Act
-                del self.users[id]
+            # Act
+            del self.users[id]
 
-                # Response
-                return {
-                    "success": True,
-                    "users": self.users,
-                    "error": None,
-                }
+            # Response
+            return self.users
 
-            except Exception as e:
-                return {"success": False, "users": None, "error": str(e)}
-
-    async def update_user_name(self, id: str, name: str) -> None:
+    async def update_user_name(self, id: str, name: str) -> dict[str, str]:
         async with self._lock:
-            try:
-                # Guards
-                if self.users.get(id) is None:
-                    raise ValueError("User with this ID does not exist")
+            # Guards
+            if self.users.get(id) is None:
+                raise ValueError("User with this ID does not exist")
 
-                # Act
-                self.users[id] = name
+            # Act
+            self.users[id] = name
 
-                # Response
-                return {
-                    "success": True,
-                    "users": self.users,
-                    "error": None,
-                }
-
-            except Exception as e:
-                return {"success": False, "users": None, "error": str(e)}
+            # Response
+            return self.users
 
     # Locked elements management
 
@@ -156,75 +107,49 @@ class StateManager:
         self,
         user_id: str,
         element_id: str,
-    ) -> LockUnlockElementResponse:
+    ) -> dict[str, str]:
         async with self._lock:
-            try:
-                # Guards
-                if self.locked_elements.get(element_id) is not None:
-                    raise ValueError("Element is already locked")
+            # Guards
+            if self.locked_elements.get(element_id) is not None:
+                raise ValueError("Element is already locked")
 
-                # Act
-                self.locked_elements[element_id] = user_id
+            # Act
+            self.locked_elements[element_id] = user_id
 
-                # Response
-                return {
-                    "success": True,
-                    "locked_elements": self.locked_elements,
-                    "error": None,
-                }
+            # Response
+            return self.locked_elements
 
-            except Exception as e:
-                return {"success": False, "locked_elements": None, "error": str(e)}
-
-    async def unlock_element(
-        self, user_id: str, element_id: str
-    ) -> LockUnlockElementResponse:
+    async def unlock_element(self, user_id: str, element_id: str) -> dict[str, str]:
         async with self._lock:
-            try:
-                # Guards
-                if self.locked_elements.get(element_id) != user_id:
-                    raise ValueError("Element is not locked by this user")
+            # Guards
+            if self.locked_elements.get(element_id) != user_id:
+                raise ValueError("Element is not locked by this user")
 
-                # Act
-                del self.locked_elements[element_id]
+            # Act
+            del self.locked_elements[element_id]
 
-                # Response
-                return {
-                    "success": True,
-                    "locked_elements": self.locked_elements,
-                    "error": None,
-                }
+            # Response
+            return self.locked_elements
 
-            except Exception as e:
-                return {"success": False, "locked_elements": None, "error": str(e)}
-
-    async def clear_locks_by_user(self, user_id: str) -> LockUnlockElementResponse:
+    async def clear_locks_by_user(self, user_id: str) -> dict[str, str]:
         """Unlock all elements locked by the given user."""
         async with self._lock:
-            try:
-                # Guards
-                if user_id not in self.users:
-                    raise ValueError("User with this ID does not exist")
+            # Guards
+            if user_id not in self.users:
+                raise ValueError("User with this ID does not exist")
 
-                # Act
-                elements_to_unlock = [
-                    element_id
-                    for element_id, locker_id in self.locked_elements.items()
-                    if locker_id == user_id
-                ]
+            # Act
+            elements_to_unlock = [
+                element_id
+                for element_id, locker_id in self.locked_elements.items()
+                if locker_id == user_id
+            ]
 
-                for element_id in elements_to_unlock:
-                    del self.locked_elements[element_id]
+            for element_id in elements_to_unlock:
+                del self.locked_elements[element_id]
 
-                # Response
-                return {
-                    "success": True,
-                    "locked_elements": self.locked_elements,
-                    "error": None,
-                }
-
-            except Exception as e:
-                return {"success": False, "locked_elements": None, "error": str(e)}
+            # Response
+            return self.locked_elements
 
 
 state_manager = StateManager()
