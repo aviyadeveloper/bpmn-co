@@ -18,7 +18,7 @@ async def handle_initial_connection_event(
         return
 
     user_id = connection_response["user_id"]
-    state_manager.add_user(user_id, generate_random_username())
+    await state_manager.add_user(user_id, generate_random_username())
 
     full_state = state_manager.get_full_state()
 
@@ -36,7 +36,7 @@ async def handle_initial_connection_event(
 
 async def handle_xml_update_event(websocket: WebSocket, message: Any) -> None:
 
-    update = state_manager.update_xml(message.get("xml"))
+    update = await state_manager.update_xml(message.get("xml"))
 
     if not update["success"]:
         error_message = json.dumps({"type": "error", "message": update["error"]})
@@ -55,7 +55,7 @@ async def handle_user_name_update_event(
     Update user's name and broadcast updated user list to others.
     """
 
-    update = state_manager.update_user_name(user_id, message.get("name"))
+    update = await state_manager.update_user_name(user_id, message.get("name"))
     if not update["success"]:
         await connection_manager.send_direct_message(
             websocket, json.dumps({"type": "error", "message": "Name update failed"})
@@ -72,12 +72,12 @@ async def handle_element_select_event(user_id: str, message: Any) -> None:
     Clear any previous locks and lock new elements for the user.
     broadcast updated lock state to all clients (including acting user).
     """
-    clear = state_manager.clear_locks_by_user(user_id)
+    clear = await state_manager.clear_locks_by_user(user_id)
 
     # Lock new elements
     if clear["success"]:
         for element_id in message.get("element_ids", []):
-            state_manager.locked_elements[element_id] = user_id
+            await state_manager.lock_element(user_id=user_id, element_id=element_id)
 
     # Broadcast updated lock state to all user including acting user
     await connection_manager.broadcast(
@@ -92,7 +92,9 @@ async def handle_element_select_event(user_id: str, message: Any) -> None:
 
 
 async def handle_element_deselect_event(user_id: str, message: Any) -> None:
-    update = state_manager.unlock_element(user_id, message.get("element_id"))
+    update = await state_manager.unlock_element(
+        user_id=user_id, element_id=message.get("element_id")
+    )
     if update["success"]:
         # Broadcast updated lock state to all clients
         await connection_manager.broadcast(
@@ -117,8 +119,8 @@ async def handle_json_validation(websocket: WebSocket, data: Any) -> Any:
 
 async def handle_flush_user_data(user_id: str):
     """Helper to remove user data on disconnect."""
-    state_manager.remove_user(user_id)
-    state_manager.clear_locks_by_user(user_id)
+    await state_manager.remove_user(user_id)
+    await state_manager.clear_locks_by_user(user_id)
 
     # Broadcast updated state to all clients
     updates = [
