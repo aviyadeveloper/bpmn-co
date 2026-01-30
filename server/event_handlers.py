@@ -1,10 +1,18 @@
 import json
-from typing import Any
+from typing import Any, Union
 
 from fastapi import WebSocket
+from pydantic import ValidationError
+
 from .managers.connections_manager import ConnectionResponse, connection_manager
 from .managers.state_manager import state_manager
 from .managers.util import generate_random_username, is_valid_json
+from .models import (
+    XmlUpdateMessage,
+    UserNameUpdateMessage,
+    ElementSelectMessage,
+    ElementDeselectMessage,
+)
 
 
 async def handle_initial_connection_event(
@@ -34,9 +42,11 @@ async def handle_initial_connection_event(
     )
 
 
-async def handle_xml_update_event(websocket: WebSocket, message: Any) -> None:
+async def handle_xml_update_event(
+    websocket: WebSocket, message: XmlUpdateMessage
+) -> None:
     try:
-        xml = await state_manager.update_xml(message.get("xml"))
+        xml = await state_manager.update_xml(message.xml)
 
         # Broadcast updated XML to all other clients
         await connection_manager.broadcast(
@@ -48,13 +58,13 @@ async def handle_xml_update_event(websocket: WebSocket, message: Any) -> None:
 
 
 async def handle_user_name_update_event(
-    websocket: WebSocket, user_id: str, message: Any
+    websocket: WebSocket, user_id: str, message: UserNameUpdateMessage
 ) -> None:
     """
     Update user's name and broadcast updated user list to others.
     """
     try:
-        users = await state_manager.update_user_name(user_id, message.get("name"))
+        users = await state_manager.update_user_name(user_id, message.name)
         await connection_manager.broadcast(
             json.dumps({"type": "users_update", "users": users}),
             exclude=None,
@@ -65,7 +75,9 @@ async def handle_user_name_update_event(
         )
 
 
-async def handle_element_select_event(user_id: str, message: Any) -> None:
+async def handle_element_select_event(
+    user_id: str, message: ElementSelectMessage
+) -> None:
     """
     Clear any previous locks and lock new elements for the user.
     broadcast updated lock state to all clients (including acting user).
@@ -74,7 +86,7 @@ async def handle_element_select_event(user_id: str, message: Any) -> None:
         await state_manager.clear_locks_by_user(user_id)
 
         # Lock new elements
-        for element_id in message.get("element_ids", []):
+        for element_id in message.element_ids:
             try:
                 await state_manager.lock_element(user_id=user_id, element_id=element_id)
             except ValueError as e:
@@ -95,10 +107,12 @@ async def handle_element_select_event(user_id: str, message: Any) -> None:
         print(f"Error in handle_element_select_event: {e}")
 
 
-async def handle_element_deselect_event(user_id: str, message: Any) -> None:
+async def handle_element_deselect_event(
+    user_id: str, message: ElementDeselectMessage
+) -> None:
     try:
         locked_elements = await state_manager.unlock_element(
-            user_id=user_id, element_id=message.get("element_id")
+            user_id=user_id, element_id=message.element_id
         )
         # Broadcast updated lock state to all clients
         await connection_manager.broadcast(
@@ -114,13 +128,48 @@ async def handle_element_deselect_event(user_id: str, message: Any) -> None:
         print(f"Error in handle_element_deselect_event: {e}")
 
 
-async def handle_json_validation(websocket: WebSocket, data: Any) -> Any:
+async def handle_json_validation(websocket: WebSocket, data: Any) -> Union[
+    XmlUpdateMessage,
+    UserNameUpdateMessage,
+    ElementSelectMessage,
+    ElementDeselectMessage,
+    None,
+]:
+    """
+    Validate JSON and parse into appropriate Pydantic model.
+    Returns None if validation fails (error message is sent to client).
+    """
     if not is_valid_json(data):
         error_message = json.dumps({"type": "error", "message": "Invalid JSON format"})
         await connection_manager.send_direct_message(websocket, error_message)
-        return False
+        return None
 
-    return json.loads(data)
+    try:
+        raw_message = json.loads(data)
+        message_type = raw_message.get("type")
+
+        # Parse into appropriate Pydantic model based on type
+        if message_type == "xml_update":
+            return XmlUpdateMessage(**raw_message)
+        elif message_type == "user_name_update":
+            return UserNameUpdateMessage(**raw_message)
+        elif message_type == "element_select":
+            return ElementSelectMessage(**raw_message)
+        elif message_type == "element_deselect":
+            return ElementDeselectMessage(**raw_message)
+        else:
+            error_message = json.dumps(
+                {"type": "error", "message": f"Unknown message type: {message_type}"}
+            )
+            await connection_manager.send_direct_message(websocket, error_message)
+            return None
+
+    except ValidationError as e:
+        error_message = json.dumps(
+            {"type": "error", "message": f"Validation error: {str(e)}"}
+        )
+        await connection_manager.send_direct_message(websocket, error_message)
+        return None
 
 
 async def handle_flush_user_data(user_id: str):

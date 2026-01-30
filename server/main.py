@@ -76,16 +76,15 @@ async def websocket_endpoint(websocket: WebSocket):
             if not message:
                 continue
 
-            if message["type"] == "xml_update":
+            # Route to appropriate handler based on message type
+            if message.type == "xml_update":
                 await handle_xml_update_event(websocket, message)
-            elif message["type"] == "user_name_update":
+            elif message.type == "user_name_update":
                 await handle_user_name_update_event(websocket, user_id, message)
-            elif message["type"] == "element_select":
+            elif message.type == "element_select":
                 await handle_element_select_event(user_id, message)
-            elif message["type"] == "element_deselect":
+            elif message.type == "element_deselect":
                 await handle_element_deselect_event(user_id, message)
-            else:
-                print(f"Received unknown message type: {message["type"]}")
 
     except WebSocketDisconnect:
         print("====> WebSocket disconnected Error")
