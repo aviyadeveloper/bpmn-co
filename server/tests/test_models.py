@@ -39,7 +39,7 @@ def test_xml_update_message_missing_xml():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         XmlUpdateMessage(**data)
-    
+
     assert "xml" in str(exc_info.value)
 
 
@@ -51,7 +51,7 @@ def test_xml_update_message_empty_xml():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         XmlUpdateMessage(**data)
-    
+
     assert "xml" in str(exc_info.value)
 
 
@@ -63,7 +63,7 @@ def test_xml_update_message_wrong_type_literal():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         XmlUpdateMessage(**data)
-    
+
     assert "type" in str(exc_info.value)
 
 
@@ -93,7 +93,7 @@ def test_user_name_update_message_missing_name():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         UserNameUpdateMessage(**data)
-    
+
     assert "name" in str(exc_info.value)
 
 
@@ -105,7 +105,7 @@ def test_user_name_update_message_empty_name():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         UserNameUpdateMessage(**data)
-    
+
     assert "name" in str(exc_info.value)
 
 
@@ -117,7 +117,7 @@ def test_user_name_update_message_name_too_long():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         UserNameUpdateMessage(**data)
-    
+
     assert "name" in str(exc_info.value)
 
 
@@ -217,7 +217,7 @@ def test_element_deselect_message_missing_element_id():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         ElementDeselectMessage(**data)
-    
+
     assert "element_id" in str(exc_info.value)
 
 
@@ -229,7 +229,7 @@ def test_element_deselect_message_empty_element_id():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         ElementDeselectMessage(**data)
-    
+
     assert "element_id" in str(exc_info.value)
 
 
@@ -246,7 +246,7 @@ def test_xml_update_message_wrong_xml_type():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         XmlUpdateMessage(**data)
-    
+
     assert "xml" in str(exc_info.value)
 
 
@@ -258,7 +258,7 @@ def test_element_select_message_wrong_element_ids_type():
     # Act & Assert
     with pytest.raises(ValidationError) as exc_info:
         ElementSelectMessage(**data)
-    
+
     assert "element_ids" in str(exc_info.value)
 
 
@@ -268,7 +268,7 @@ def test_message_extra_fields_allowed():
     data = {
         "type": "xml_update",
         "xml": "<valid>XML</valid>",
-        "extra_field": "should_be_ignored"
+        "extra_field": "should_be_ignored",
     }
 
     # Act

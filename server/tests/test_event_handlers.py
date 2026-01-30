@@ -36,9 +36,11 @@ async def test_handle_xml_update_event_success(valid_xml):
     # Arrange
     websocket = AsyncMock()
     message = XmlUpdateMessage(type="xml_update", xml=valid_xml)
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.update_xml = AsyncMock(return_value=valid_xml)
         mock_conn.broadcast = AsyncMock()
 
@@ -48,7 +50,7 @@ async def test_handle_xml_update_event_success(valid_xml):
         # Assert
         mock_state.update_xml.assert_called_once_with(valid_xml)
         mock_conn.broadcast.assert_called_once()
-        
+
         # Check broadcast was called with correct data
         broadcast_call = mock_conn.broadcast.call_args
         broadcast_data = json.loads(broadcast_call[0][0])
@@ -64,10 +66,14 @@ async def test_handle_xml_update_event_invalid_xml():
     websocket = AsyncMock()
     invalid_xml = "<invalid><unclosed>"
     message = XmlUpdateMessage(type="xml_update", xml=invalid_xml)
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
-        mock_state.update_xml = AsyncMock(side_effect=ValueError("Invalid XML provided"))
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
+        mock_state.update_xml = AsyncMock(
+            side_effect=ValueError("Invalid XML provided")
+        )
         mock_conn.send_direct_message = AsyncMock()
 
         # Act
@@ -95,9 +101,11 @@ async def test_handle_user_name_update_event_success():
     new_name = "NewName"
     message = UserNameUpdateMessage(type="user_name_update", name=new_name)
     updated_users = {"user123": new_name}
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.update_user_name = AsyncMock(return_value=updated_users)
         mock_conn.broadcast = AsyncMock()
 
@@ -107,7 +115,7 @@ async def test_handle_user_name_update_event_success():
         # Assert
         mock_state.update_user_name.assert_called_once_with(user_id, new_name)
         mock_conn.broadcast.assert_called_once()
-        
+
         # Check broadcast data
         broadcast_call = mock_conn.broadcast.call_args
         broadcast_data = json.loads(broadcast_call[0][0])
@@ -123,9 +131,11 @@ async def test_handle_user_name_update_event_nonexistent_user():
     websocket = AsyncMock()
     user_id = "nonexistent"
     message = UserNameUpdateMessage(type="user_name_update", name="Name")
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.update_user_name = AsyncMock(
             side_effect=ValueError("User with this ID does not exist")
         )
@@ -154,9 +164,11 @@ async def test_handle_element_select_event_success():
     element_ids = ["elem1", "elem2"]
     message = ElementSelectMessage(type="element_select", element_ids=element_ids)
     locked_elements = {"elem1": user_id, "elem2": user_id}
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.clear_locks_by_user = AsyncMock(return_value={})
         mock_state.lock_element = AsyncMock(return_value=locked_elements)
         mock_state.get_locked_elements = MagicMock(return_value=locked_elements)
@@ -169,7 +181,7 @@ async def test_handle_element_select_event_success():
         mock_state.clear_locks_by_user.assert_called_once_with(user_id)
         assert mock_state.lock_element.call_count == 2
         mock_conn.broadcast.assert_called_once()
-        
+
         # Check broadcast data
         broadcast_data = json.loads(mock_conn.broadcast.call_args[0][0])
         assert broadcast_data["type"] == "locked_elements_update"
@@ -182,9 +194,11 @@ async def test_handle_element_select_event_empty_list():
     # Arrange
     user_id = "user123"
     message = ElementSelectMessage(type="element_select", element_ids=[])
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.clear_locks_by_user = AsyncMock(return_value={})
         mock_state.get_locked_elements = MagicMock(return_value={})
         mock_conn.broadcast = AsyncMock()
@@ -205,16 +219,15 @@ async def test_handle_element_select_event_lock_conflict():
     user_id = "user123"
     element_ids = ["elem1", "elem2"]
     message = ElementSelectMessage(type="element_select", element_ids=element_ids)
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.clear_locks_by_user = AsyncMock(return_value={})
         # First lock succeeds, second fails
         mock_state.lock_element = AsyncMock(
-            side_effect=[
-                {"elem1": user_id},
-                ValueError("Element is already locked")
-            ]
+            side_effect=[{"elem1": user_id}, ValueError("Element is already locked")]
         )
         mock_state.get_locked_elements = MagicMock(return_value={"elem1": user_id})
         mock_conn.broadcast = AsyncMock()
@@ -240,9 +253,11 @@ async def test_handle_element_deselect_event_success():
     element_id = "elem1"
     message = ElementDeselectMessage(type="element_deselect", element_id=element_id)
     updated_locks = {}
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.unlock_element = AsyncMock(return_value=updated_locks)
         mock_conn.broadcast = AsyncMock()
 
@@ -254,7 +269,7 @@ async def test_handle_element_deselect_event_success():
             user_id=user_id, element_id=element_id
         )
         mock_conn.broadcast.assert_called_once()
-        
+
         # Check broadcast data
         broadcast_data = json.loads(mock_conn.broadcast.call_args[0][0])
         assert broadcast_data["type"] == "locked_elements_update"
@@ -268,9 +283,11 @@ async def test_handle_element_deselect_event_not_locked():
     user_id = "user123"
     element_id = "unlocked_elem"
     message = ElementDeselectMessage(type="element_deselect", element_id=element_id)
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.unlock_element = AsyncMock(
             side_effect=ValueError("Element is not locked by this user")
         )
@@ -294,7 +311,7 @@ async def test_handle_json_validation_valid_xml_update():
     # Arrange
     websocket = AsyncMock()
     data = json.dumps({"type": "xml_update", "xml": "<valid>XML</valid>"})
-    
+
     with patch("server.event_handlers.connection_manager"):
         # Act
         result = await handle_json_validation(websocket, data)
@@ -311,7 +328,7 @@ async def test_handle_json_validation_valid_user_name_update():
     # Arrange
     websocket = AsyncMock()
     data = json.dumps({"type": "user_name_update", "name": "TestName"})
-    
+
     with patch("server.event_handlers.connection_manager"):
         # Act
         result = await handle_json_validation(websocket, data)
@@ -327,7 +344,7 @@ async def test_handle_json_validation_invalid_json():
     # Arrange
     websocket = AsyncMock()
     data = "not valid json{"
-    
+
     with patch("server.event_handlers.connection_manager") as mock_conn:
         mock_conn.send_direct_message = AsyncMock()
 
@@ -349,7 +366,7 @@ async def test_handle_json_validation_unknown_type():
     # Arrange
     websocket = AsyncMock()
     data = json.dumps({"type": "unknown_type", "data": "something"})
-    
+
     with patch("server.event_handlers.connection_manager") as mock_conn:
         mock_conn.send_direct_message = AsyncMock()
 
@@ -370,7 +387,7 @@ async def test_handle_json_validation_missing_required_field():
     # Arrange
     websocket = AsyncMock()
     data = json.dumps({"type": "xml_update"})  # Missing 'xml' field
-    
+
     with patch("server.event_handlers.connection_manager") as mock_conn:
         mock_conn.send_direct_message = AsyncMock()
 
@@ -395,9 +412,11 @@ async def test_handle_flush_user_data_success():
     """Test flushing user data removes user and locks, broadcasts updates."""
     # Arrange
     user_id = "user123"
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.clear_locks_by_user = AsyncMock()  # Called first now
         mock_state.remove_user = AsyncMock()  # Called second
         mock_state.get_users = MagicMock(return_value={})
@@ -418,9 +437,11 @@ async def test_handle_flush_user_data_handles_error():
     """Test flush user data handles errors gracefully."""
     # Arrange
     user_id = "user123"
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         # Mock clear_locks_by_user to raise error (happens first now)
         mock_state.clear_locks_by_user = AsyncMock(
             side_effect=ValueError("User does not exist")
@@ -452,11 +473,13 @@ async def test_handle_initial_connection_event_success():
     full_state = {
         "xml": "<xml/>",
         "users": {user_id: "RandomName"},
-        "locked_elements": {}
+        "locked_elements": {},
     }
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.add_user = AsyncMock()
         mock_state.get_full_state = MagicMock(return_value=full_state)
         mock_conn.send_direct_message = AsyncMock()
@@ -469,7 +492,7 @@ async def test_handle_initial_connection_event_success():
         mock_state.add_user.assert_called_once()
         mock_conn.send_direct_message.assert_called_once()
         mock_conn.broadcast.assert_called_once()
-        
+
         # Check init message sent to new user
         init_call = mock_conn.send_direct_message.call_args[0][1]
         init_data = json.loads(init_call)
@@ -482,10 +505,16 @@ async def test_handle_initial_connection_event_connection_failed():
     """Test initial connection handles connection failure."""
     # Arrange
     websocket = AsyncMock()
-    connection_response = {"success": False, "user_id": None, "error": "Connection failed"}
-    
-    with patch("server.event_handlers.state_manager") as mock_state, \
-         patch("server.event_handlers.connection_manager") as mock_conn:
+    connection_response = {
+        "success": False,
+        "user_id": None,
+        "error": "Connection failed",
+    }
+
+    with (
+        patch("server.event_handlers.state_manager") as mock_state,
+        patch("server.event_handlers.connection_manager") as mock_conn,
+    ):
         mock_state.add_user = AsyncMock()
         mock_conn.send_direct_message = AsyncMock()
 
