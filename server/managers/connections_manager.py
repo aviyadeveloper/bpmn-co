@@ -82,6 +82,7 @@ class ConnectionManager:
             await websocket.send_text(message)
             return {"success": True, "error": None}
         except Exception as e:
+            await self.disconnect(websocket)
             return {"success": False, "error": f"Direct message error: {e}"}
 
     async def broadcast(self, message: str, exclude: WebSocket = None):
@@ -90,16 +91,9 @@ class ConnectionManager:
 
         for connection in self.active_connections:
             if connection != exclude:
-                tasks.append(self._safe_send(connection, message))
+                tasks.append(self.send_direct_message(connection, message))
 
         await asyncio.gather(*tasks, return_exceptions=True)
-
-    async def _safe_send(self, connection: WebSocket, message: str):
-        """Send message and handle disconnection on failure."""
-        try:
-            await connection.send_text(message)
-        except Exception:
-            await self.disconnect(connection)
 
 
 connection_manager = ConnectionManager()

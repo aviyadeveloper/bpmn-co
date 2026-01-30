@@ -167,7 +167,7 @@ class StateManager:
             return {"success": False, "locked_elements": None, "error": str(e)}
 
     def unlock_element(
-        self, element_id: str, user_id: str
+        self, element_id: str, user_id: str | None
     ) -> LockUnlockElementResponse:
         try:
             # Guards
