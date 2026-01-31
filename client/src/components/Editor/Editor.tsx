@@ -1,12 +1,12 @@
 import React from "react";
+import { useEditor } from "../../services/editor/useEditor";
 import { Header } from "./Header/Header";
-import { useCollaboration } from "../../contexts/CollaborationProvider";
 import { SideBar } from "./Sidebar/SideBar";
 import { OfflineAlert } from "./OfflineAlert";
 import { Diagram } from "./Diagram";
 
 export const Editor: React.FC = () => {
-  const { isConnected, reconnectCount } = useCollaboration();
+  const { isConnected } = useEditor();
 
   return (
     <div
@@ -20,7 +20,7 @@ export const Editor: React.FC = () => {
       <Header />
       <Diagram />
       <SideBar />
-      {!isConnected && <OfflineAlert reconnectCount={reconnectCount} />}
+      {!isConnected && <OfflineAlert />}
     </div>
   );
 };

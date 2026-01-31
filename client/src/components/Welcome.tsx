@@ -1,14 +1,12 @@
 import type React from "react";
+import { useMainStore } from "../services/main/mainStore";
 
 type WelcomeProps = {
   existingDiagram: boolean;
 };
 
 export const Welcome: React.FC<WelcomeProps> = ({ existingDiagram }) => {
-  const handleStart = () => {
-    console.log("Starting new diagram or joining collaboration...");
-  };
-
+  const { openEditor } = useMainStore();
   return (
     <div
       style={{
@@ -18,19 +16,13 @@ export const Welcome: React.FC<WelcomeProps> = ({ existingDiagram }) => {
         transform: "translate(-50%, -50%)",
         textAlign: "center",
         color: "#888",
-        fontFamily: "Arial, sans-serif",
       }}
     >
       <h1>Welcome to Diagramer!</h1>
-      <p>
-        Start by creating a new diagram or opening an existing one to begin
-        collaborating.
-      </p>
-      {!existingDiagram ? (
-        <button onClick={handleStart}>Create new Diagram</button>
-      ) : (
-        <button onClick={handleStart}>Join Collaboration</button>
-      )}
+      <p>Create a new diagram or join an existing collaboration.</p>
+      <button onClick={openEditor}>
+        {existingDiagram ? "Join Collaboration" : "Create new Diagram"}
+      </button>
     </div>
   );
 };

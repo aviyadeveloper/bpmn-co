@@ -1,9 +1,7 @@
 import React from "react";
-import { useCollaboration } from "../../../contexts/CollaborationProvider";
-
+import { useEditor } from "../../../services/editor/useEditor";
 export const LockedElements: React.FC = () => {
-  const { collaborationState } = useCollaboration();
-  const { userId, users, lockedElements } = collaborationState;
+  const { userId, users, lockedElements } = useEditor();
 
   return (
     <div style={{ marginBottom: "24px" }}>

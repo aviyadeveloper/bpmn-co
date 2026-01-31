@@ -1,10 +1,4 @@
-type OfflineAlertProps = {
-  reconnectCount: number;
-};
-
-export const OfflineAlert: React.FC<OfflineAlertProps> = ({
-  reconnectCount,
-}) => {
+export const OfflineAlert: React.FC = ({}) => {
   return (
     <div
       style={{
@@ -18,9 +12,7 @@ export const OfflineAlert: React.FC<OfflineAlertProps> = ({
       <strong>Offline Mode</strong>
       <br />
       <span style={{ fontSize: "12px", color: "#555" }}>
-        {reconnectCount > 0
-          ? `Reconnecting... (attempt ${reconnectCount})`
-          : "Connecting to server..."}
+        : "Connecting to server..."
       </span>
     </div>
   );

@@ -1,19 +1,13 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useCollaboration } from "../../contexts/CollaborationProvider";
-import { useBpmnModeler } from "../../hooks/useBpmnModeler";
+import { useEditor } from "../../services/editor/useEditor";
+import { useBpmnModeler } from "../../services/modeler/useBpmnModeler";
 
 export function Diagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
   // Get collaboration state and functions from context
-  const {
-    initialXml,
-    isConnected,
-    sendXmlUpdate,
-    sendElementSelect,
-    onXmlUpdate,
-  } = useCollaboration();
+  const { xml, isConnected, sendXmlUpdate, sendElementSelect } = useEditor();
 
   // Update container state when ref is set
   // This triggers useBpmnModeler initialization
@@ -35,16 +29,14 @@ export function Diagram() {
 
   const { modeler, loadXml } = useBpmnModeler({
     container,
-    initialXml,
+    initialXml: xml,
     onChange: handleXmlChange,
   });
 
   // Register to receive XML updates from other users
   useEffect(() => {
-    onXmlUpdate((xml) => {
-      loadXml(xml);
-    });
-  }, [onXmlUpdate, loadXml]);
+    loadXml(xml);
+  }, [xml, loadXml]);
 
   // Listen to modeler selection events for element locking
   useEffect(() => {

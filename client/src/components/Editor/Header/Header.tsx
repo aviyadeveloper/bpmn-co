@@ -1,10 +1,10 @@
 import React from "react";
 import { ConnectionStatus } from "./ConnectionStatusIndicator";
 import { NameControl } from "./NameControl";
-import { useCollaboration } from "../../../contexts/CollaborationProvider";
+import { useEditor } from "../../../services/editor/useEditor";
 
 export const Header: React.FC = () => {
-  const { isConnected } = useCollaboration();
+  const { isConnected } = useEditor();
 
   return (
     <div

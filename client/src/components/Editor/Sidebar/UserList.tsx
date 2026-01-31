@@ -1,9 +1,8 @@
 import React from "react";
-import { useCollaboration } from "../../../contexts/CollaborationProvider";
+import { useEditor } from "../../../services/editor/useEditor";
 
 export const UserList: React.FC = () => {
-  const { collaborationState } = useCollaboration();
-  const { userId, users } = collaborationState;
+  const { userId, users } = useEditor();
 
   return (
     <div style={{ marginBottom: "24px" }}>
