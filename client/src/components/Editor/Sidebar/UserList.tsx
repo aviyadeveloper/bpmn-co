@@ -1,5 +1,5 @@
 import React from "react";
-import { useCollaboration } from "../../CollaborationProvider";
+import { useCollaboration } from "../../../contexts/CollaborationProvider";
 
 export const UserList: React.FC = () => {
   const { collaborationState } = useCollaboration();

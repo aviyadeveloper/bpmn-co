@@ -1,5 +1,5 @@
 import React from "react";
-import { useCollaboration } from "../../CollaborationProvider";
+import { useCollaboration } from "../../../contexts/CollaborationProvider";
 
 export const LockedElements: React.FC = () => {
   const { collaborationState } = useCollaboration();

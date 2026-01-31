@@ -21,7 +21,7 @@ import type {
   lockedElements,
   UserId,
   ElementId,
-} from "../components/types";
+} from "../types";
 
 /**
  * Collaboration-specific event handlers

@@ -21,7 +21,7 @@ import {
 } from "react";
 import type { ReactNode } from "react";
 import { useDiagramSync } from "../hooks/useDiagramSync";
-import type { CollaborationState, ElementId } from "./types";
+import type { CollaborationState, ElementId } from "../types";
 
 interface CollaborationContextValue {
   /** Initial XML received from server */

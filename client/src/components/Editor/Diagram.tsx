@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useCollaboration } from "../CollaborationProvider";
+import { useCollaboration } from "../../contexts/CollaborationProvider";
 import { useBpmnModeler } from "../../hooks/useBpmnModeler";
 
 export function Diagram() {

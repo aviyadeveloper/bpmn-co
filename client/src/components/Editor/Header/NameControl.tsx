@@ -1,5 +1,5 @@
 import React from "react";
-import { useCollaboration } from "../../CollaborationProvider";
+import { useCollaboration } from "../../../contexts/CollaborationProvider";
 
 export const NameControl: React.FC = ({}) => {
   const { sendUserNameUpdate, collaborationState } = useCollaboration();

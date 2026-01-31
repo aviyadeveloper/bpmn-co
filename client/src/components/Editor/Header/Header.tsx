@@ -1,7 +1,7 @@
 import React from "react";
 import { ConnectionStatus } from "./ConnectionStatusIndicator";
 import { NameControl } from "./NameControl";
-import { useCollaboration } from "../../CollaborationProvider";
+import { useCollaboration } from "../../../contexts/CollaborationProvider";
 
 export const Header: React.FC = () => {
   const { isConnected } = useCollaboration();

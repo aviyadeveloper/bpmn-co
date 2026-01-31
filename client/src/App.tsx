@@ -3,7 +3,7 @@ import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 
-import { CollaborationProvider } from "./components/CollaborationProvider";
+import { CollaborationProvider } from "./contexts/CollaborationProvider";
 import { Diagram } from "./components/Editor/Diagram";
 import { Editor } from "./components/Editor/Editor";
 
