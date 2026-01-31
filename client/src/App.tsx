@@ -4,15 +4,14 @@ import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";
 
 import { CollaborationProvider } from "./components/CollaborationProvider";
-import { BpmnCollaborativeEditor } from "./components/BpmnCollaborativeEditor";
-import { Welcome } from "./components/Welcome";
+import { Diagram } from "./components/Editor/Diagram";
+import { Editor } from "./components/Editor/Editor";
 
 function App() {
   return (
     <div style={{ height: "100vh", width: "100vw", margin: 0, padding: 0 }}>
       <CollaborationProvider url="ws://localhost:8000/ws">
-        {/* <Welcome existingDiagram={true} /> */}
-        <BpmnCollaborativeEditor />
+        <Editor />
       </CollaborationProvider>
     </div>
   );

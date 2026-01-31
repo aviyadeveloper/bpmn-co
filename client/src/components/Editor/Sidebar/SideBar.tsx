@@ -2,7 +2,7 @@ import React from "react";
 import { UserList } from "./UserList";
 import { LockedElements } from "./LockedElements";
 
-export const EditorSideBar: React.FC = () => {
+export const SideBar: React.FC = () => {
   return (
     <div
       style={{

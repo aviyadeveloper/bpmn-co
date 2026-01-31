@@ -1,11 +1,8 @@
 import { useRef, useEffect, useState, useCallback } from "react";
-import { useCollaboration } from "./CollaborationProvider";
-import { useBpmnModeler } from "../hooks/useBpmnModeler";
-import { OfflineAlert } from "./OfflineAlert";
-import { EditorHeader } from "./EditorHeader";
-import { EditorSideBar } from "./EditorSideBar";
+import { useCollaboration } from "../CollaborationProvider";
+import { useBpmnModeler } from "../../hooks/useBpmnModeler";
 
-export function BpmnCollaborativeEditor() {
+export function Diagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
@@ -13,7 +10,6 @@ export function BpmnCollaborativeEditor() {
   const {
     initialXml,
     isConnected,
-    reconnectCount,
     sendXmlUpdate,
     sendElementSelect,
     onXmlUpdate,
@@ -74,32 +70,14 @@ export function BpmnCollaborativeEditor() {
 
   return (
     <div
+      ref={containerRef}
       style={{
-        display: "flex",
-        height: "100vh",
-        flexDirection: "column",
-        maxWidth: "100vw",
+        flex: 1,
+        backgroundColor: "beige",
+        position: "absolute",
+        width: "100%",
+        height: "100%",
       }}
-    >
-      <EditorHeader />
-
-      {/* Main content area */}
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        {/* BPMN Editor */}
-        <div
-          ref={containerRef}
-          style={{
-            flex: 1,
-            backgroundColor: "pink",
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-          }}
-        />
-
-        <EditorSideBar />
-        {!isConnected && <OfflineAlert reconnectCount={reconnectCount} />}
-      </div>
-    </div>
+    />
   );
 }
