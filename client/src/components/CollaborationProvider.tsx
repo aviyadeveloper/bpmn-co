@@ -181,7 +181,7 @@ export function CollaborationProvider({
         >
           {isConnected ? "🟢 Connected" : "🔴 Connecting..."}
         </div>
-        <div style={{ fontSize: "1.2rem", color: "#666" }}>
+        <div style={{ fontSize: "1.2rem", color: "#000" }}>
           {isConnected ? "Loading diagram..." : "Connecting to server..."}
         </div>
         {reconnectCount > 0 && (
