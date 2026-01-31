@@ -1,22 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * useWebSocket - A production-ready WebSocket hook for React
- *
- * Current Features (Steps 1-5):
- * ✅ Connection management (connect/disconnect/auto-connect)
- * ✅ Smart reconnection (exponential backoff + jitter)
- * ✅ Error handling (callbacks + state tracking)
- * ✅ Send/receive text messages (strings, XML, JSON, etc.)
- *
- * Possible Future Improvements:
- * - forceClose() method: Permanent close without reconnection ability
- * - Generic message types: Type-safe message handling with TypeScript generics
- * - Message queue: Buffer messages when connection is down, send on reconnect
- * - Heartbeat/ping-pong: Keep-alive mechanism to detect stale connections
- * - Connection metrics: Track uptime, message count, latency, reconnection stats
- * - Debug mode: Verbose logging toggle for development
- * - React DevTools integration: Inspect WebSocket state in DevTools
+ * useWebSocket - A generic WebSocket connection management hook for React.
  *
  * Usage Example:
  *   const { readyState, send, lastMessage, lastError } = useWebSocket('ws://localhost:8000', {
@@ -35,6 +20,16 @@ import { useEffect, useRef, useState } from "react";
  *   if (readyState === WebSocket.OPEN) {
  *     send('<bpmn>...</bpmn>');
  *   }
+ *
+ * Possible Future Improvements:
+ * - forceClose() method: Permanent close without reconnection ability
+ * - Generic message types: Type-safe message handling with TypeScript generics
+ * - Message queue: Buffer messages when connection is down, send on reconnect
+ * - Heartbeat/ping-pong: Keep-alive mechanism to detect stale connections
+ * - Connection metrics: Track uptime, message count, latency, reconnection stats
+ * - Debug mode: Verbose logging toggle for development
+ * - React DevTools integration: Inspect WebSocket state in DevTools
+ *
  */
 
 export interface WebSocketError {

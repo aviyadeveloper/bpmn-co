@@ -1,3 +1,13 @@
+/**
+ * useDiagramSync - Type-safe WebSocket hook for BPMN diagram collaboration.
+ *
+ * This hook wraps a generic WebSocket hook to provide:
+ * - Type-safe message parsing and handling for BPMN collaboration.
+ * - Management of collaboration state (users, locked elements, client ID).
+ * - Type-safe send methods for all relevant message types.
+ * - Automatic state updates based on server messages.
+ */
+
 import { useCallback, useState } from "react";
 import { useWebSocket } from "./useWebSocket";
 import type {
@@ -38,7 +48,7 @@ export interface CollaborationHandlers {
   onError?: (message: string) => void;
 }
 
-export interface UseCollaborationWebSocketReturn {
+export interface UseDiagramSyncReturn {
   /** Current WebSocket ready state: 0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED */
   readyState: number;
 
@@ -71,7 +81,7 @@ export interface UseCollaborationWebSocketReturn {
 }
 
 /**
- * useCollaborationWebSocket - Type-safe WebSocket hook for BPMN collaboration
+ * useDiagramSync - Type-safe WebSocket hook for diagram collaboration
  *
  * This hook wraps the generic useWebSocket hook and provides:
  * - Type-safe message parsing and handling
@@ -91,7 +101,7 @@ export interface UseCollaborationWebSocketReturn {
  *     collaborationState,
  *     sendXmlUpdate,
  *     sendElementSelect
- *   } = useCollaborationWebSocket('ws://localhost:8000/ws', {
+ *   } = useDiagramSync('ws://localhost:8000/ws', {
  *     onInit: ({ xml, users, userId }) => {
  *       console.log('Connected as:', userId);
  *       loadXmlIntoEditor(xml);
@@ -101,10 +111,10 @@ export interface UseCollaborationWebSocketReturn {
  *     }
  *   });
  */
-export function useCollaborationWebSocket(
+export function useDiagramSync(
   url: string,
   handlers: CollaborationHandlers = {},
-): UseCollaborationWebSocketReturn {
+): UseDiagramSyncReturn {
   // Track collaboration-specific state
   const [collaborationState, setCollaborationState] =
     useState<CollaborationState>({
@@ -124,10 +134,7 @@ export function useCollaborationWebSocket(
 
         switch (message.type) {
           case "init": {
-            console.log(
-              "[useCollaborationWebSocket] Received init message:",
-              message,
-            );
+            console.log("[useDiagramSync] Received init message:", message);
             // Update collaboration state with initial data
             setCollaborationState({
               userId: message.user_id,
@@ -168,7 +175,7 @@ export function useCollaborationWebSocket(
           case "locked_elements_update": {
             // Server sends authoritative lock state - replace our state completely
             console.log(
-              "[useCollaborationWebSocket] Received locked_elements_update:",
+              "[useDiagramSync] Received locked_elements_update:",
               message.locked_elements,
             );
             setCollaborationState((prev) => ({
@@ -186,15 +193,12 @@ export function useCollaborationWebSocket(
           }
 
           default: {
-            console.warn(
-              "[useCollaborationWebSocket] Unknown message type:",
-              message,
-            );
+            console.warn("[useDiagramSync] Unknown message type:", message);
           }
         }
       } catch (error) {
         console.error(
-          "[useCollaborationWebSocket] Failed to parse message:",
+          "[useDiagramSync] Failed to parse message:",
           error,
           "Raw message:",
           messageStr,
@@ -212,7 +216,7 @@ export function useCollaborationWebSocket(
     reconnectInterval: 1000,
     onMessage: handleMessage,
     onError: (_event, errorInfo) => {
-      console.error("[useCollaborationWebSocket] WebSocket error:", errorInfo);
+      console.error("[useDiagramSync] WebSocket error:", errorInfo);
     },
   });
 

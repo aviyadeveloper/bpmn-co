@@ -1,95 +1,74 @@
 /**
  * BpmnCollaborativeEditor - Real-time collaborative BPMN editor
  *
- * This component combines:
- * - BPMN modeler (useBpmnModeler)
- * - WebSocket collaboration (useCollaborationWebSocket)
- * - User management and element locking
+ * This component manages:
+ * - BPMN modeler instance and diagram rendering
+ * - Element selection for locking
+ * - User interface and collaboration display
+ *
+ * Expects to be rendered within CollaborationProvider which handles:
+ * - WebSocket connection and state
+ * - Initial XML loading
  */
 
-import { useRef, useEffect, useState } from "react";
-import { useCollaborationWebSocket } from "../hooks/useCollaborationWebSocket";
+import { useRef, useEffect, useState, useCallback } from "react";
+import { useCollaboration } from "./CollaborationProvider";
 import { useBpmnModeler } from "../hooks/useBpmnModeler";
-import { EMPTY_DIAGRAM } from "./constants";
 
 export function BpmnCollaborativeEditor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
-  const [currentXml, setCurrentXml] = useState<string>(EMPTY_DIAGRAM);
-  const [hasInitialSync, setHasInitialSync] = useState<boolean>(false);
+
+  // Get collaboration state and functions from context
+  const {
+    initialXml,
+    collaborationState,
+    isConnected,
+    readyState,
+    reconnectCount,
+    sendXmlUpdate,
+    sendUserNameUpdate,
+    sendElementSelect,
+    onXmlUpdate,
+  } = useCollaboration();
 
   // Update container state when ref is set
+  // This triggers useBpmnModeler initialization
   useEffect(() => {
     if (containerRef.current && !container) {
       setContainer(containerRef.current);
     }
   }, [container]);
 
-  // Set up collaboration WebSocket
-  const {
-    readyState,
-    isConnected,
-    reconnectCount,
-    collaborationState,
-    sendXmlUpdate,
-    sendUserNameUpdate,
-    sendElementSelect,
-    sendElementDeselect,
-  } = useCollaborationWebSocket("ws://localhost:8000/ws", {
-    // Called when connection is established and initial state is received
-    onInit: ({ xml, users, lockedElements, userId }) => {
-      console.log("✅ Connected as:", userId);
-      console.log("👥 Current users:", users);
-      console.log("🔒 Locked elements:", lockedElements);
-
-      // Set initial XML which will trigger BPMN modeler initialization
-      setCurrentXml(xml);
-      setHasInitialSync(true);
-      console.log("✅ Ready to initialize modeler");
-    },
-
-    // Called when another user updates the diagram
-    onXmlUpdate: (xml) => {
-      console.log("📝 Diagram updated by another user");
-      setCurrentXml(xml);
-      // Load XML into modeler (will prevent re-triggering onChange)
-      loadXml(xml);
-    },
-
-    // Called when user list changes (name update, connect, disconnect)
-    onUsersUpdate: (users) => {
-      console.log("👥 User list updated:", users);
-    },
-
-    // Called when locked elements state is updated
-    onLockedElementsUpdate: (lockedElements) => {
-      console.log("� Locked elements updated:", lockedElements);
-      // The collaborationState will be updated automatically by the hook
-    },
-
-    // Called when server sends an error
-    onError: (message) => {
-      console.error("❌ Server error:", message);
-      alert(`Server error: ${message}`);
-    },
-  });
-
-  // Set up BPMN modeler - ONLY after we have initial sync
-  // This prevents race conditions
-  const { modeler, loadXml } = useBpmnModeler({
-    container: hasInitialSync ? container : null, // Only pass container after initial sync
-    initialXml: currentXml,
-    onChange: (xml) => {
+  // Handle XML changes from local edits
+  const handleXmlChange = useCallback(
+    (xml?: string) => {
       console.log("📤 Local diagram change, sending to server");
       if (isConnected && xml) {
         sendXmlUpdate(xml);
       }
     },
+    [isConnected, sendXmlUpdate],
+  );
+
+  // Set up BPMN modeler
+  const { modeler, loadXml } = useBpmnModeler({
+    container,
+    initialXml,
+    onChange: handleXmlChange,
   });
+
+  // Register to receive XML updates from other users
+  useEffect(() => {
+    onXmlUpdate((xml) => {
+      console.log("📝 Loading XML from other user");
+      loadXml(xml);
+    });
+  }, [onXmlUpdate, loadXml]);
 
   // Listen to modeler selection events for element locking
   useEffect(() => {
-    if (!modeler.current || !hasInitialSync) return;
+    if (!modeler.current) return;
 
     const handleSelectionChange = (event: any) => {
       console.group("🎯 Selection Changed");
@@ -120,13 +99,7 @@ export function BpmnCollaborativeEditor() {
     return () => {
       modeler.current?.off("selection.changed", handleSelectionChange);
     };
-  }, [
-    modeler,
-    isConnected,
-    hasInitialSync,
-    sendElementSelect,
-    sendElementDeselect,
-  ]);
+  }, [modeler, isConnected, sendElementSelect]);
 
   // Access collaboration state
   const { userId, users, lockedElements, currentUserName } = collaborationState;
