@@ -1,11 +1,55 @@
-# Digramer
+# BPMN Collaborative Editor
 
-A collaborative diagramming tool for BPMN diagrams, allowing live collaboration from multiple users.
+A real-time collaborative BPMN diagram editor. Multiple users can edit diagrams simultaneously with element-level locking, live synchronization, and user presence indicators.
 
-## Server
+## Quick Start
 
-FastAPI server handling websocket connection pool, receiving and broadcasting updates from connected clients.
+### Prerequisites
 
-## Client
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) - Python package manager
+- [Node.js](https://nodejs.org/) - JavaScript runtime (includes npm)
 
-Vite based React SPA. Uses BPMN-JS to render and edit diagram. Connected to the the server with a websocket which allows updates in and out.
+Verify prerequisites:
+
+```bash
+make check
+```
+
+### Installation
+
+```bash
+make install
+```
+
+### Run Application
+
+```bash
+make dev
+```
+
+This starts:
+
+- Server at `http://localhost:8000`
+- Client at `http://localhost:5173`
+
+### Other Commands
+
+```bash
+make test              # Run all tests
+make test-coverage     # Run tests with coverage
+make help              # Show all available commands
+```
+
+## Architecture
+
+### Server (`/server`)
+
+FastAPI-based WebSocket server with thread-safe state management, element locking, and real-time change broadcasting.
+
+See [server/README.md](./server/README.md) for detailed documentation.
+
+### Client (`/client`)
+
+React + TypeScript SPA using bpmn-js for diagram rendering and Zustand for state management.
+
+See [client/README.md](./client/README.md) for detailed documentation.

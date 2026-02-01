@@ -1,73 +1,111 @@
-# React + TypeScript + Vite
+# BPMN Collaborative Editing Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React-based web client for real-time collaborative BPMN diagram editing. Built with TypeScript, Vite, and bpmn-js, featuring state management with Zustand and WebSocket-based synchronization.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Real-time Collaboration**: Edit BPMN diagrams with multiple users simultaneously
+- **Template Selection**: Start from pre-configured BPMN templates
+- **Element Locking**: Visual indicators for elements locked by other users
+- **User Presence**: See who's currently editing the diagram
+- **Offline Detection**: Automatic reconnection handling
+- **Zoom Controls**: Intuitive zoom and fit-to-viewport controls
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **bpmn-js** - BPMN diagram rendering and editing
+- **Zustand** - State management
+- **react-use-websocket** - WebSocket connection management
+- **Vitest** - Testing framework
 
-## Expanding the ESLint configuration
+## Architecture
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Module Organization
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── App.tsx                          # Main app component and routing
+├── components/
+│   ├── Editor/                      # Diagram editing interface
+│   │   ├── Editor.tsx               # Main editor container
+│   │   ├── Diagram.tsx              # BPMN diagram canvas
+│   │   ├── ZoomControls.tsx         # Zoom controls
+│   │   ├── OfflineAlert.tsx         # Connection status alert
+│   │   ├── Header/                  # Top bar components
+│   │   └── Sidebar/                 # User list and element locks
+│   └── Welcome/                     # Landing page and template selection
+└── services/
+    ├── editor/                      # Editor state and WebSocket logic
+    ├── modeler/                     # bpmn-js modeler integration
+    └── main/                        # App-level state (navigation)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### State Management
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+The application uses Zustand stores for state management:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **mainStore**: Navigation state (welcome vs editor view)
+- **editorStore**: WebSocket connection, user data, locked elements, XML state
+- **modelerStore**: bpmn-js modeler instance and zoom controls
+
+### WebSocket Integration
+
+The client communicates with the server using the following message types:
+
+**Outgoing**:
+
+- `xml_update` - Send diagram changes
+- `user_name_update` - Update display name
+- `element_select` - Lock elements for editing
+- `element_deselect` - Release element locks
+
+**Incoming**:
+
+- `init` - Initial connection with full state
+- `xml_update` - Receive diagram changes from others
+- `user_joined` - New user connected
+- `user_left` - User disconnected
+- `user_name_update` - User changed their name
+- `elements_locked` - Elements locked by another user
+- `element_unlocked` - Element lock released
+
+## Development
+
+### Setup
+
+```bash
+npm install
 ```
+
+### Run Dev Server
+
+```bash
+npm run dev
+```
+
+### Run Tests
+
+```bash
+npm test              # Watch mode
+npm run test:run      # Single run
+npm run test:ui       # UI mode
+```
+
+### Build
+
+```bash
+npm run build
+```
+
+### Lint
+
+```bash
+npm run lint
+```
+
+## Environment
+
+The client expects the WebSocket server to be available at `ws://localhost:8000/ws` by default. Update `WS_URL` in `src/constants.ts` to point to your server.
