@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { API_BASE_URL } from "../../constants";
 import type { TemplateId } from "../../constants";
 
 interface MainState {
@@ -16,9 +17,9 @@ interface MainState {
 
 const initialState = {
   editorOpened: false,
-  selectedTemplate: null as TemplateId | null,
+  selectedTemplate: null,
   isCheckingInitialization: false,
-  diagramInitialized: null as boolean | null,
+  diagramInitialized: null,
 };
 
 export const useMainStore = create<MainState>((set, get) => ({
@@ -30,25 +31,20 @@ export const useMainStore = create<MainState>((set, get) => ({
     set({ selectedTemplate: template }),
 
   checkInitialization: async () => {
-    // Don't check if already checking
     if (get().isCheckingInitialization) return;
 
     set({ isCheckingInitialization: true });
 
-    try {
-      const response = await fetch("http://localhost:8000/");
-      const data = await response.json();
+    const finishCheck = (diagramInitialized: boolean) =>
+      set({ diagramInitialized, isCheckingInitialization: false });
 
-      set({
-        diagramInitialized: data.is_initialized || false,
-        isCheckingInitialization: false,
-      });
+    try {
+      const response = await fetch(`${API_BASE_URL}/`);
+      const data = await response.json();
+      finishCheck(data.is_initialized || false);
     } catch (error) {
       console.error("Failed to check initialization status:", error);
-      set({
-        diagramInitialized: false,
-        isCheckingInitialization: false,
-      });
+      finishCheck(false);
     }
   },
 }));

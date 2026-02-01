@@ -1,7 +1,12 @@
+// Base URLs from environment variables
+export const WS_BASE_URL =
+  import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 // Function to build WebSocket URL with optional template parameter
 export const buildWsUrl = (template?: string) => {
-  const baseUrl = "ws://localhost:8000/ws";
-  return template ? `${baseUrl}?template=${template}` : baseUrl;
+  return template ? `${WS_BASE_URL}?template=${template}` : WS_BASE_URL;
 };
 
 export const TEMPLATES = {
