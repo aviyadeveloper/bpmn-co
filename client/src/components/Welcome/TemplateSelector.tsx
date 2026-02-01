@@ -13,9 +13,11 @@ export const TemplateSelector: React.FC<TemplateSelectorProps> = ({
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-        gap: "20px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: "24px",
         width: "100%",
+        maxWidth: "960px",
+        margin: "0 auto",
       }}
     >
       {Object.values(TEMPLATES).map((template) => (
