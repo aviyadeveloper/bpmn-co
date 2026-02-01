@@ -1,5 +1,5 @@
 run-dev:
-	uv run uvicorn server.main:app --reload --host 127.0.0.1 --port 8000
+	uv run fastapi dev ./main.py --reload
 
 test:
 	uv run pytest ./tests/ -v
