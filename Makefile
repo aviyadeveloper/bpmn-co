@@ -1,9 +1,9 @@
-.PHONY: help check install server-install client-install server-dev server-test server-test-coverage client-dev client-test client-test-coverage dev test test-coverage
+.PHONY: help check install server-install client-install e2e-install server-dev server-test server-test-coverage client-dev client-test client-test-coverage e2e-test e2e-test-ui e2e-test-headed dev test test-coverage
 
 help:
 	@echo "Available targets:"
 	@echo "  make check                  - Check if required tools are installed"
-	@echo "  make install                - Install all dependencies (server + client)"
+	@echo "  make install                - Install all dependencies (server + client + e2e)"
 	@echo "  make dev                    - Run both server and client in dev mode"
 	@echo "  make test                   - Run all tests (server + client)"
 	@echo "  make test-coverage          - Run all tests with coverage"
@@ -17,6 +17,11 @@ help:
 	@echo "  make client-dev             - Run client in dev mode"
 	@echo "  make client-test            - Run client tests"
 	@echo "  make client-test-coverage   - Run client tests with coverage"
+	@echo ""
+	@echo "  make e2e-install            - Install E2E test dependencies"
+	@echo "  make e2e-test               - Run E2E tests (headless)"
+	@echo "  make e2e-test-ui            - Run E2E tests with UI"
+	@echo "  make e2e-test-headed        - Run E2E tests with visible browser"
 
 # Check prerequisites
 check:
@@ -30,7 +35,7 @@ check:
 	@echo "  - npm: $$(npm --version)"
 
 # Installation targets
-install: check server-install client-install
+install: check server-install client-install e2e-install
 	@echo ""
 	@echo "Installation complete!"
 	@echo "Run 'make dev' to start the application"
@@ -42,6 +47,11 @@ server-install:
 client-install:
 	@echo "Installing client dependencies..."
 	cd client && npm install
+
+e2e-install:
+	@echo "Installing E2E test dependencies..."
+	cd e2e && npm install
+	cd e2e && npx playwright install
 
 # Server targets
 server-dev:
@@ -62,6 +72,16 @@ client-test:
 
 client-test-coverage:
 	cd client && npm run test:run -- --coverage
+
+# E2E test targets
+e2e-test:
+	cd e2e && npm test
+
+e2e-test-ui:
+	cd e2e && npm run test:ui
+
+e2e-test-headed:
+	cd e2e && npm run test:headed
 
 # Combined targets
 dev:

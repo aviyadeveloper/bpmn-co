@@ -53,3 +53,9 @@ See [server/README.md](./server/README.md) for detailed documentation.
 React + TypeScript SPA using bpmn-js for diagram rendering and Zustand for state management.
 
 See [client/README.md](./client/README.md) for detailed documentation.
+
+### E2E Tests (`/e2e`)
+
+Playwright-based end-to-end tests covering single-user and multi-user collaboration scenarios.
+
+See [e2e/README.md](./e2e/README.md) for detailed documentation.
