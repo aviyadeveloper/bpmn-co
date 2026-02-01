@@ -52,13 +52,8 @@ class ConnectionManager:
         """Remove a WebSocket connection from active connections."""
         try:
             user_id = self.ws_uid_map.get(websocket, None)
-
             self.active_connections.discard(websocket)
-
             self.ws_uid_map.pop(websocket, None)
-
-            # State updates for users and locks - handled externally
-            # Broadcast updates handled externally
 
             return {"success": True, "user_id": user_id, "error": None}
         except Exception as e:

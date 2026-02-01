@@ -9,6 +9,8 @@ interface EditorState {
   users: Users;
   lockedElements: lockedElements;
   xml: string;
+  template: string;
+  isInitialized: boolean;
 
   setConnected: (isConnected: boolean) => void;
   setFullState: (
@@ -17,6 +19,8 @@ interface EditorState {
     users: Users,
     lockedElements: lockedElements,
     xml: string,
+    template: string,
+    isInitialized: boolean,
   ) => void;
   updateUsers: (users: Users) => void;
   updateUserName: (userName: string) => void;
@@ -32,14 +36,32 @@ const initialState = {
   users: {},
   lockedElements: {},
   xml: emptyBpmnXml,
+  template: "",
+  isInitialized: false,
 };
 
 export const useEditorStore = create<EditorState>((set) => ({
   ...initialState,
 
   setConnected: (isConnected) => set({ isConnected }),
-  setFullState: (userId, userName, users, lockedElements, xml) =>
-    set({ userId, userName, users, lockedElements, xml }),
+  setFullState: (
+    userId,
+    userName,
+    users,
+    lockedElements,
+    xml,
+    template,
+    isInitialized,
+  ) =>
+    set({
+      userId,
+      userName,
+      users,
+      lockedElements,
+      xml,
+      template,
+      isInitialized,
+    }),
   updateUsers: (users) => set({ users }),
   updateUserName: (userName) => set({ userName }),
   updateLockedElements: (lockedElements) => set({ lockedElements }),

@@ -469,6 +469,7 @@ async def test_handle_initial_connection_event_success():
     # Arrange
     websocket = AsyncMock()
     user_id = "user123"
+    template = "blank"
     connection_response = {"success": True, "user_id": user_id, "error": None}
     full_state = {
         "xml": "<xml/>",
@@ -481,15 +482,18 @@ async def test_handle_initial_connection_event_success():
         patch("server.event_handlers.connection_manager") as mock_conn,
     ):
         mock_state.add_user = AsyncMock()
+        mock_state.is_initialized = False
+        mock_state.initialize_diagram = AsyncMock()
         mock_state.get_full_state = MagicMock(return_value=full_state)
         mock_conn.send_direct_message = AsyncMock()
         mock_conn.broadcast = AsyncMock()
 
         # Act
-        await handle_initial_connection_event(websocket, connection_response)
+        await handle_initial_connection_event(websocket, connection_response, template)
 
         # Assert
         mock_state.add_user.assert_called_once()
+        mock_state.initialize_diagram.assert_called_once_with(template)
         mock_conn.send_direct_message.assert_called_once()
         mock_conn.broadcast.assert_called_once()
 
@@ -505,6 +509,7 @@ async def test_handle_initial_connection_event_connection_failed():
     """Test initial connection handles connection failure."""
     # Arrange
     websocket = AsyncMock()
+    template = "blank"
     connection_response = {
         "success": False,
         "user_id": None,
@@ -519,7 +524,7 @@ async def test_handle_initial_connection_event_connection_failed():
         mock_conn.send_direct_message = AsyncMock()
 
         # Act
-        await handle_initial_connection_event(websocket, connection_response)
+        await handle_initial_connection_event(websocket, connection_response, template)
 
         # Assert
         mock_state.add_user.assert_not_called()

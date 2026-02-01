@@ -57,6 +57,8 @@ export interface InitMessage {
   locked_elements: lockedElements;
   user_id: UserId;
   user_name: string;
+  template: string;
+  is_initialized: boolean;
 }
 
 export interface XmlUpdateBroadcast {

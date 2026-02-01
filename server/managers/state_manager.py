@@ -1,7 +1,9 @@
 from typing import TypedDict
 import asyncio
+import uuid
 
 from server.managers.util import is_valid_xml, load_initial_xml
+from server.templates.loader import load_template
 
 
 class User(TypedDict):
@@ -18,26 +20,36 @@ class StateManager:
     - BPMN xml diagram state
     - Connected users list (ids, names)
     - Locked elements list (element ids, user ids)
+    - Template used to initialize the diagram
 
     It exposes to read and update the state in accordance with necessary synchronization mechanisms.
     """
 
     _lock: asyncio.Lock
+    diagram_id: str
     xml: str
     users: dict[str, str]
     locked_elements: dict[str, str]
+    template: str | None
+    is_initialized: bool
 
     def __init__(self):
         self._lock = asyncio.Lock()
+        self.diagram_id = str(uuid.uuid4())
         self.xml = load_initial_xml()
         self.users = {}
         self.locked_elements = {}
+        self.template = None
+        self.is_initialized = False
 
     def get_full_state(self):
         return {
+            "diagram_id": self.diagram_id,
             "xml": self.xml,
             "users": self.users,
             "locked_elements": self.locked_elements,
+            "template": self.template,
+            "is_initialized": self.is_initialized,
         }
 
     # XML management
@@ -150,6 +162,48 @@ class StateManager:
 
             # Response
             return self.locked_elements
+
+    # Diagram initialization and reset
+
+    async def initialize_diagram(self, template: str) -> dict:
+        """Initialize diagram with a template. Only works if not already initialized."""
+        async with self._lock:
+            # Guards
+            if self.is_initialized:
+                raise ValueError("Diagram is already initialized")
+
+            # Act
+            try:
+                template_xml = load_template(template)
+                self.xml = template_xml
+                self.template = template
+                self.is_initialized = True
+            except (FileNotFoundError, IOError) as e:
+                raise ValueError(f"Failed to load template '{template}': {e}")
+
+            # Response
+            return {
+                "template": self.template,
+                "is_initialized": self.is_initialized,
+            }
+
+    async def reset_diagram(self) -> dict:
+        """Reset diagram to initial state. Should be called when all users disconnect."""
+        async with self._lock:
+            # Act
+            self.diagram_id = str(uuid.uuid4())
+            self.xml = load_initial_xml()
+            self.users = {}
+            self.locked_elements = {}
+            self.template = None
+            self.is_initialized = False
+
+            # Response
+            return self.get_full_state()
+
+    def should_reset(self) -> bool:
+        """Check if diagram should be reset (no users connected)."""
+        return len(self.users) == 0
 
 
 state_manager = StateManager()

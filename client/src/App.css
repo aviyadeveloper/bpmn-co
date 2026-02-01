@@ -3,6 +3,11 @@ body {
   font-family: 'Nunito Variable', sans-serif;
 }
 
+/* Apply Nunito font to BPMN.js elements */
+.djs-element text {
+  font-family: 'Nunito Variable', sans-serif !important;
+}
+
 .djs-palette.two-column.open {
 	width: 94px;
 	top: 5em;

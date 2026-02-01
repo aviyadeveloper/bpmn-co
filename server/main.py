@@ -39,6 +39,7 @@ from .event_handlers import (
 
 from .managers import connection_manager
 from .managers import state_manager
+from .templates.constants import get_template_or_default
 
 app = FastAPI()
 
@@ -57,14 +58,19 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for handling BPMN XML synchronization.
     Handles initial connection, incoming messages, and disconnections.
+    Accepts optional 'template' query parameter for diagram initialization.
     """
 
     try:
 
+        # Extract and validate template parameter from query string
+        template_param = websocket.query_params.get("template")
+        template = get_template_or_default(template_param)
+
         # Initial Connection
         connection_response = await connection_manager.connect(websocket)
         user_id = connection_response.get("user_id", None)
-        await handle_initial_connection_event(websocket, connection_response)
+        await handle_initial_connection_event(websocket, connection_response, template)
 
         # Ongoing Communication
         while True:
@@ -91,10 +97,18 @@ async def websocket_endpoint(websocket: WebSocket):
         await handle_flush_user_data(user_id)
         await connection_manager.disconnect(websocket)
 
+        # Reset diagram if all users disconnected
+        if state_manager.should_reset():
+            await state_manager.reset_diagram()
+
     except Exception as e:
         print(f"====> WebSocket error: {e}")
         await handle_flush_user_data(user_id)
         await connection_manager.disconnect(websocket)
+
+        # Reset diagram if all users disconnected
+        if state_manager.should_reset():
+            await state_manager.reset_diagram()
 
 
 @app.get("/")

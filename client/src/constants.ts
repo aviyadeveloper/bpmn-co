@@ -1,4 +1,33 @@
-export const WS_URL = "ws://localhost:8000/ws";
+// Function to build WebSocket URL with optional template parameter
+export const buildWsUrl = (template?: string) => {
+  const baseUrl = "ws://localhost:8000/ws";
+  return template ? `${baseUrl}?template=${template}` : baseUrl;
+};
+
+export const TEMPLATES = {
+  blank: {
+    id: "blank",
+    name: "Blank Canvas",
+    description: "Start with an empty diagram",
+  },
+  "simple-process": {
+    id: "simple-process",
+    name: "Simple Process",
+    description: "Linear workflow with tasks",
+  },
+  "approval-workflow": {
+    id: "approval-workflow",
+    name: "Approval Workflow",
+    description: "Process with approval gateway",
+  },
+  "cross-functional": {
+    id: "cross-functional",
+    name: "Cross-Functional",
+    description: "Multiple swim lanes",
+  },
+} as const;
+
+export type TemplateId = keyof typeof TEMPLATES;
 
 export const COLORS = {
   WHITE: "#FFFFFF",

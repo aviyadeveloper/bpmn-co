@@ -16,10 +16,13 @@ from .models import (
 
 
 async def handle_initial_connection_event(
-    websocket: WebSocket, connection_response: ConnectionResponse
+    websocket: WebSocket, connection_response: ConnectionResponse, template: str
 ) -> None:
     """
-    On new client connection: 1.add new user and broadcast updated user list. 2. Send initial data to the new user.
+    On new client connection:
+    1. If first user, initialize diagram with chosen template
+    2. Add new user and broadcast updated user list
+    3. Send initial data to the new user
     """
     if not connection_response["success"]:
         # Handle connection error
@@ -27,6 +30,14 @@ async def handle_initial_connection_event(
 
     user_id = connection_response["user_id"]
     await state_manager.add_user(user_id, generate_random_username())
+
+    # Initialize diagram with template if this is the first user
+    if not state_manager.is_initialized:
+        try:
+            await state_manager.initialize_diagram(template)
+        except ValueError as e:
+            # Diagram already initialized by another user (race condition)
+            print(f"Diagram initialization skipped: {e}")
 
     full_state = state_manager.get_full_state()
     user_name = full_state["users"][user_id]

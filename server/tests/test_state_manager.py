@@ -344,8 +344,138 @@ async def test_get_full_state(state_with_locked_elements):
     assert "xml" in full_state
     assert "users" in full_state
     assert "locked_elements" in full_state
+    assert "template" in full_state
+    assert "is_initialized" in full_state
     assert isinstance(full_state["xml"], str)
     assert isinstance(full_state["users"], dict)
     assert isinstance(full_state["locked_elements"], dict)
     assert len(full_state["users"]) == 2
     assert len(full_state["locked_elements"]) == 2
+
+
+# ==========================================
+# Template and Initialization Tests
+# ==========================================
+
+
+@pytest.mark.asyncio
+async def test_initial_state_not_initialized(state_manager):
+    """Test that StateManager starts uninitialized."""
+    # Arrange & Act
+    # (state_manager provided by fixture)
+
+    # Assert
+    assert state_manager.is_initialized is False
+    assert state_manager.template is None
+
+
+@pytest.mark.asyncio
+async def test_initialize_diagram_success(state_manager):
+    """Test initializing diagram with template succeeds."""
+    # Arrange
+    template = "simple-process"
+    initial_xml = state_manager.get_xml()
+
+    # Act
+    result = await state_manager.initialize_diagram(template)
+
+    # Assert
+    assert result["template"] == template
+    assert result["is_initialized"] is True
+    assert state_manager.is_initialized is True
+    assert state_manager.template == template
+    # XML should be updated to template XML
+    assert state_manager.get_xml() != initial_xml
+    assert "Task_1" in state_manager.get_xml()
+    assert "Task_2" in state_manager.get_xml()
+
+
+@pytest.mark.asyncio
+async def test_initialize_diagram_already_initialized_raises_error(state_manager):
+    """Test initializing already initialized diagram raises ValueError."""
+    # Arrange
+    await state_manager.initialize_diagram("blank")
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="Diagram is already initialized"):
+        await state_manager.initialize_diagram("simple-process")
+
+
+@pytest.mark.asyncio
+async def test_initialize_diagram_invalid_template_raises_error(state_manager):
+    """Test initializing with invalid template raises ValueError."""
+    # Arrange
+    invalid_template = "nonexistent-template"
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="Failed to load template"):
+        await state_manager.initialize_diagram(invalid_template)
+
+    # Diagram should remain uninitialized
+    assert state_manager.is_initialized is False
+    assert state_manager.template is None
+
+
+@pytest.mark.asyncio
+async def test_reset_diagram_clears_all_state(state_with_locked_elements):
+    """Test reset_diagram clears all state including template."""
+    # Arrange
+    await state_with_locked_elements.initialize_diagram("approval-workflow")
+    original_diagram_id = state_with_locked_elements.diagram_id
+
+    # Act
+    result = await state_with_locked_elements.reset_diagram()
+
+    # Assert
+    assert result["users"] == {}
+    assert result["locked_elements"] == {}
+    assert result["template"] is None
+    assert result["is_initialized"] is False
+    assert result["diagram_id"] != original_diagram_id
+
+
+@pytest.mark.asyncio
+async def test_should_reset_returns_true_when_no_users(state_manager):
+    """Test should_reset returns True when no users connected."""
+    # Arrange & Act
+    result = state_manager.should_reset()
+
+    # Assert
+    assert result is True
+
+
+@pytest.mark.asyncio
+async def test_should_reset_returns_false_when_users_connected(state_with_users):
+    """Test should_reset returns False when users are connected."""
+    # Arrange
+    # (state_with_users has 2 users)
+
+    # Act
+    result = state_with_users.should_reset()
+
+    # Assert
+    assert result is False
+
+
+@pytest.mark.asyncio
+async def test_concurrent_initialize_diagram_race_condition(state_manager):
+    """Test that only one initialization succeeds in race condition."""
+    # Arrange
+    template1 = "blank"
+    template2 = "simple-process"
+
+    # Act - Try to initialize concurrently
+    results = await asyncio.gather(
+        state_manager.initialize_diagram(template1),
+        state_manager.initialize_diagram(template2),
+        return_exceptions=True,
+    )
+
+    # Assert - One should succeed, one should fail
+    success_count = sum(1 for r in results if isinstance(r, dict))
+    error_count = sum(1 for r in results if isinstance(r, ValueError))
+
+    assert success_count == 1
+    assert error_count == 1
+    assert state_manager.is_initialized is True
+    assert state_manager.template in [template1, template2]

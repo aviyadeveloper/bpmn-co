@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import type {
   ServerToClientMessage,
@@ -10,9 +10,9 @@ import type {
 } from "../../types";
 import { useEditorStore } from "./editorStore";
 import { buildWsUrl } from "../../constants";
-import { useMainStore } from "../main/mainStore";
+import type { TemplateId } from "../../constants";
 
-export interface UseEditorReturn {
+export interface UseEditorConnectionReturn {
   isConnected: boolean;
   userId: UserId;
   userName: string;
@@ -26,9 +26,15 @@ export interface UseEditorReturn {
   sendUserNameUpdate: (name: string) => void;
   sendElementSelect: (elementIds: ElementId | ElementId[]) => void;
   sendElementDeselect: (elementId: ElementId) => void;
+  connect: (template?: TemplateId) => void;
+  disconnect: () => void;
 }
 
-export function useEditor(): UseEditorReturn {
+/**
+ * Hook for managing WebSocket connection with template parameter support.
+ * Allows connecting with a chosen template or without (for joining existing session).
+ */
+export function useEditorConnection(): UseEditorConnectionReturn {
   const {
     userId,
     userName,
@@ -45,8 +51,8 @@ export function useEditor(): UseEditorReturn {
     updateLockedElements,
   } = useEditorStore();
 
-  const { selectedTemplate, editorOpened } = useMainStore();
-  const wsUrl = buildWsUrl(selectedTemplate || undefined);
+  const wsUrlRef = useRef<string | null>(null);
+  const shouldConnectRef = useRef(false);
 
   // Handle incoming WebSocket messages
   const handleMessage = (event: MessageEvent) => {
@@ -83,15 +89,15 @@ export function useEditor(): UseEditorReturn {
           break;
 
         case "error":
-          console.error("[useEditor] Server error:", message.message);
+          console.error("[useEditorConnection] Server error:", message.message);
           break;
 
         default:
-          console.warn("[useEditor] Unknown message type:", message);
+          console.warn("[useEditorConnection] Unknown message type:", message);
       }
     } catch (error) {
       console.error(
-        "[useEditor] Failed to parse message:",
+        "[useEditorConnection] Failed to parse message:",
         error,
         "Raw message:",
         event.data,
@@ -99,20 +105,20 @@ export function useEditor(): UseEditorReturn {
     }
   };
 
-  // Use react-use-websocket with dynamic URL based on template
-  const { sendMessage, readyState } = useWebSocket(
-    wsUrl,
+  // Use react-use-websocket with conditional URL
+  const { sendMessage, readyState, getWebSocket } = useWebSocket(
+    wsUrlRef.current,
     {
-      share: true, // Share connection across all instances in Editor
-      shouldReconnect: () => editorOpened,
+      share: false,
+      shouldReconnect: () => shouldConnectRef.current,
       reconnectAttempts: 10,
       reconnectInterval: 1000,
       onMessage: handleMessage,
       onError: (event) => {
-        console.error("[useEditor] WebSocket error:", event);
+        console.error("[useEditorConnection] WebSocket error:", event);
       },
     },
-    editorOpened, // Only connect when editor is opened
+    shouldConnectRef.current, // Only connect when explicitly requested
   );
 
   const isConnected = readyState === ReadyState.OPEN;
@@ -156,6 +162,19 @@ export function useEditor(): UseEditorReturn {
     [send],
   );
 
+  const connect = useCallback((template?: TemplateId) => {
+    wsUrlRef.current = buildWsUrl(template);
+    shouldConnectRef.current = true;
+  }, []);
+
+  const disconnect = useCallback(() => {
+    shouldConnectRef.current = false;
+    const ws = getWebSocket();
+    if (ws) {
+      ws.close();
+    }
+  }, [getWebSocket]);
+
   return {
     isConnected,
     userId,
@@ -169,5 +188,7 @@ export function useEditor(): UseEditorReturn {
     sendUserNameUpdate,
     sendElementSelect,
     sendElementDeselect,
+    connect,
+    disconnect,
   };
 }
