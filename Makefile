@@ -94,7 +94,7 @@ e2e-install:
 
 # Server targets
 server-dev:
-	cd server && uv run fastapi dev ./main.py --reload
+	cd server && uv run uvicorn server.main:app --reload --host 127.0.0.1 --port 8000
 
 server-test:
 	cd server && uv run pytest ./tests/ -v
@@ -126,7 +126,7 @@ e2e-test-headed:
 dev: check-env
 	@echo "Starting server and client in dev mode..."
 	@trap 'kill 0' EXIT; \
-	cd server && uv run fastapi dev ./main.py --reload & \
+	cd server && uv run uvicorn server.main:app --reload --host 127.0.0.1 --port 8000 & \
 	cd client && npm run dev
 
 test:
