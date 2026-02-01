@@ -11,6 +11,8 @@ interface EditorState {
   xml: string;
   template: string;
   isInitialized: boolean;
+  zoomIn: (() => void) | null;
+  zoomOut: (() => void) | null;
 
   setConnected: (isConnected: boolean) => void;
   setFullState: (
@@ -26,6 +28,7 @@ interface EditorState {
   updateUserName: (userName: string) => void;
   updateLockedElements: (lockedElements: lockedElements) => void;
   setXml: (xml: string) => void;
+  setZoomFunctions: (zoomIn: () => void, zoomOut: () => void) => void;
   reset: () => void;
 }
 
@@ -38,6 +41,8 @@ const initialState = {
   xml: emptyBpmnXml,
   template: "",
   isInitialized: false,
+  zoomIn: null as (() => void) | null,
+  zoomOut: null as (() => void) | null,
 };
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -66,5 +71,6 @@ export const useEditorStore = create<EditorState>((set) => ({
   updateUserName: (userName) => set({ userName }),
   updateLockedElements: (lockedElements) => set({ lockedElements }),
   setXml: (xml) => set({ xml }),
+  setZoomFunctions: (zoomIn, zoomOut) => set({ zoomIn, zoomOut }),
   reset: () => set(initialState),
 }));

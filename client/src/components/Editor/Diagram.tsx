@@ -3,7 +3,7 @@ import { useEditor } from "../../services/editor/useEditor";
 import { useBpmnModeler } from "../../services/modeler/useBpmnModeler";
 import { COLORS } from "../../constants";
 
-export function Diagram() {
+export const Diagram: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
@@ -28,7 +28,7 @@ export function Diagram() {
     [isConnected, sendXmlUpdate],
   );
 
-  const { modeler, loadXml } = useBpmnModeler({
+  const { modeler, loadXml, zoomIn, zoomOut } = useBpmnModeler({
     container,
     initialXml: xml,
     onChange: handleXmlChange,
@@ -60,6 +60,16 @@ export function Diagram() {
       modeler.current?.off("selection.changed", handleSelectionChange);
     };
   }, [modeler, isConnected, sendElementSelect]);
+
+  return {
+    containerRef,
+    zoomIn,
+    zoomOut,
+  };
+};
+
+export function DiagramCanvas() {
+  const { containerRef } = Diagram();
 
   return (
     <div

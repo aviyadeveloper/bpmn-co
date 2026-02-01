@@ -156,8 +156,22 @@ export function useBpmnModeler({
     }
   }, []);
 
+  const zoomIn = useCallback(() => {
+    if (!modelerRef.current) return;
+    const zoomScroll = modelerRef.current.get("zoomScroll") as any;
+    zoomScroll.stepZoom(1);
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    if (!modelerRef.current) return;
+    const zoomScroll = modelerRef.current.get("zoomScroll") as any;
+    zoomScroll.stepZoom(-1);
+  }, []);
+
   return {
     modeler: modelerRef,
     loadXml,
+    zoomIn,
+    zoomOut,
   };
 }

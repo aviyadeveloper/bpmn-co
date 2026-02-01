@@ -8,12 +8,22 @@ body {
   font-family: 'Nunito Variable', sans-serif !important;
 }
 
+/* Hide BPMN.io logo */
+.bjs-powered-by {
+  display: none !important;
+}
+
+/* Add dotted grid background to diagram canvas */
+.djs-container {
+  background-image: radial-gradient(circle, #d0d0d0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 .djs-palette.two-column.open {
 	width: 94px;
 	top: 5em;
 	border: none;
 	border-radius: 8px;
-	color: pink;
 	background-color: #ffffff;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
