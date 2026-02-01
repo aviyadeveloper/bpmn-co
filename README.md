@@ -21,6 +21,31 @@ make check
 make install
 ```
 
+This will:
+
+- Check prerequisites (uv, Node.js, npm)
+- Setup environment variables (creates `client/.env` if needed)
+- Install server dependencies
+- Install client dependencies
+- Install E2E test dependencies
+
+### Configuration
+
+Environment variables are automatically configured during installation. The default configuration is:
+
+```env
+VITE_WS_URL=ws://localhost:8000/ws
+VITE_API_URL=http://localhost:8000
+```
+
+To use different URLs, edit `client/.env` before running the application.
+
+You can also check/setup environment variables separately:
+
+```bash
+make check-env
+```
+
 ### Run Application
 
 ```bash

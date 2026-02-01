@@ -1,8 +1,9 @@
-.PHONY: help check install server-install client-install e2e-install server-dev server-test server-test-coverage client-dev client-test client-test-coverage e2e-test e2e-test-ui e2e-test-headed dev test test-coverage
+.PHONY: help check check-env install server-install client-install e2e-install server-dev server-test server-test-coverage client-dev client-test client-test-coverage e2e-test e2e-test-ui e2e-test-headed dev test test-coverage
 
 help:
 	@echo "Available targets:"
 	@echo "  make check                  - Check if required tools are installed"
+	@echo "  make check-env              - Check and setup environment variables"
 	@echo "  make install                - Install all dependencies (server + client + e2e)"
 	@echo "  make dev                    - Run both server and client in dev mode"
 	@echo "  make test                   - Run all tests (server + client)"
@@ -34,8 +35,46 @@ check:
 	@echo "  - node: $$(node --version)"
 	@echo "  - npm: $$(npm --version)"
 
+# Check and setup environment variables
+check-env:
+	@echo "Checking environment configuration..."
+	@if [ ! -f client/.env ]; then \
+		echo ""; \
+		echo "⚠️  No .env file found in client/"; \
+		if [ -f client/.env.example ]; then \
+			echo "✓ Copying client/.env.example to client/.env"; \
+			cp client/.env.example client/.env; \
+			echo ""; \
+			echo "Environment file created with default values:"; \
+			echo "  VITE_WS_URL=ws://localhost:8000/ws"; \
+			echo "  VITE_API_URL=http://localhost:8000"; \
+			echo ""; \
+			echo "You can modify client/.env if you need different URLs."; \
+		else \
+			echo "✓ Creating client/.env with default values"; \
+			echo "# WebSocket endpoint for real-time collaboration" > client/.env; \
+			echo "VITE_WS_URL=ws://localhost:8000/ws" >> client/.env; \
+			echo "" >> client/.env; \
+			echo "# REST API endpoint for HTTP requests" >> client/.env; \
+			echo "VITE_API_URL=http://localhost:8000" >> client/.env; \
+			echo ""; \
+			echo "Environment file created with default values:"; \
+			echo "  VITE_WS_URL=ws://localhost:8000/ws"; \
+			echo "  VITE_API_URL=http://localhost:8000"; \
+			echo ""; \
+			echo "You can modify client/.env if you need different URLs."; \
+		fi; \
+	else \
+		echo "✓ Environment file exists: client/.env"; \
+		echo ""; \
+		echo "Current configuration:"; \
+		@grep "^VITE_" client/.env | sed 's/^/  /' || echo "  (No VITE_* variables found)"; \
+	fi
+	@echo ""
+	@echo "Environment check complete!"
+
 # Installation targets
-install: check server-install client-install e2e-install
+install: check check-env server-install client-install e2e-install
 	@echo ""
 	@echo "Installation complete!"
 	@echo "Run 'make dev' to start the application"
@@ -64,7 +103,7 @@ server-test-coverage:
 	cd server && uv run pytest ./tests/ --cov=server --cov-report=html --cov-report=term
 
 # Client targets
-client-dev:
+client-dev: check-env
 	cd client && npm run dev
 
 client-test:
@@ -84,7 +123,7 @@ e2e-test-headed:
 	cd e2e && npm run test:headed
 
 # Combined targets
-dev:
+dev: check-env
 	@echo "Starting server and client in dev mode..."
 	@trap 'kill 0' EXIT; \
 	cd server && uv run fastapi dev ./main.py --reload & \
