@@ -49,6 +49,7 @@ export function useEditor(): UseEditorReturn {
         case "init":
           setFullState(
             message.user_id,
+            message.user_name,
             message.users,
             message.locked_elements,
             message.xml,

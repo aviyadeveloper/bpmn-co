@@ -13,6 +13,7 @@ interface EditorState {
   setConnected: (isConnected: boolean) => void;
   setFullState: (
     userId: UserId,
+    userName: string,
     users: Users,
     lockedElements: lockedElements,
     xml: string,
@@ -37,8 +38,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   ...initialState,
 
   setConnected: (isConnected) => set({ isConnected }),
-  setFullState: (userId, users, lockedElements, xml) =>
-    set({ userId, users, lockedElements, xml }),
+  setFullState: (userId, userName, users, lockedElements, xml) =>
+    set({ userId, userName, users, lockedElements, xml }),
   updateUsers: (users) => set({ users }),
   updateUserName: (userName) => set({ userName }),
   updateLockedElements: (lockedElements) => set({ lockedElements }),
