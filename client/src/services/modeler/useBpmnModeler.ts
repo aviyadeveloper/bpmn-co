@@ -1,34 +1,22 @@
 import { useEffect, useRef, useCallback } from "react";
 import BpmnJS from "bpmn-js/lib/Modeler";
+import { useEditor } from "../editor/useEditor";
+import { canEditElement } from "../../utils";
 
 type UseBpmnOptions = {
-  /** DOM container for the BPMN modeler. Should not be null when hook is used. */
   container: HTMLDivElement | null;
-  /** Initial XML to load into the modeler */
   initialXml: string;
-  /** Callback fired when user makes local changes to the diagram */
   onChange?: (xml?: string) => void;
 };
 
 /**
- * useBpmnModeler - Manages BPMN.js modeler instance lifecycle
+ * Manages BPMN.js modeler instance lifecycle and collaboration features.
  *
- * This hook handles:
- * - Initializing BPMN.js modeler
- * - Loading initial XML
- * - Tracking local changes and calling onChange
- * - Providing loadXml() for external updates (from other users)
- * - Preventing circular updates with isExternalUpdateRef guard
- *
- * The isExternalUpdateRef flag is NECESSARY to prevent this loop:
- *   1. Other user sends XML update
- *   2. We call loadXml(xml)
- *   3. BPMN.js triggers commandStack.changed
- *   4. Our onChange handler fires
- *   5. We send the XML back to server (unnecessary)
- *   6. Loop continues...
- *
- * The guard breaks this cycle by suppressing onChange during loadXml().
+ * Handles:
+ * - Modeler initialization and XML loading
+ * - Local change tracking (onChange callback)
+ * - External XML updates without triggering onChange (loadXml)
+ * - Element locking to prevent editing locked elements
  */
 export function useBpmnModeler({
   container,
@@ -36,28 +24,36 @@ export function useBpmnModeler({
   onChange,
 }: UseBpmnOptions) {
   const modelerRef = useRef<BpmnJS | null>(null);
-
-  // Guard to prevent onChange from firing during external XML imports
-  // This is critical for avoiding circular update loops
   const isExternalUpdateRef = useRef(false);
 
-  // Keep onChange callback fresh without reinitializing modeler
-  // Using a ref prevents the modeler useEffect from running on every onChange update
-  const onChangeRef = useRef(onChange);
+  const { userId, lockedElements } = useEditor();
 
-  // Keep onChange ref up to date
+  const onChangeRef = useRef(onChange);
+  const userIdRef = useRef(userId);
+  const lockedElementsRef = useRef(lockedElements);
+
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
+  useEffect(() => {
+    userIdRef.current = userId;
+    lockedElementsRef.current = lockedElements;
+  }, [userId, lockedElements]);
+
+  // Helper: Check if element is editable by current user
+  const isElementEditable = useCallback((elementId: string) => {
+    return canEditElement(
+      elementId,
+      lockedElementsRef.current,
+      userIdRef.current,
+    );
+  }, []);
+
   // Initialize modeler when container is available
   useEffect(() => {
-    if (!container) {
-      console.log("⏸️  Waiting for container...");
-      return;
-    }
+    if (!container) return;
 
-    console.log("🚀 Initializing BPMN Modeler");
     const modeler = new BpmnJS({ container });
     modelerRef.current = modeler;
 
@@ -68,51 +64,70 @@ export function useBpmnModeler({
 
     // Listen for diagram changes from user edits
     modeler.on("commandStack.changed", async () => {
-      // Skip if this change is from an external update (other user)
-      if (isExternalUpdateRef.current) {
-        console.log("⏭️  Skipping onChange (external update)");
-        return;
-      }
+      if (isExternalUpdateRef.current) return;
 
-      // User made a local change - export XML and notify
-      console.log("📝 Local diagram change detected");
       const { xml } = await modeler.saveXML({ format: true });
       onChangeRef.current?.(xml);
     });
 
+    // Prevent selection of locked elements
+    modeler.on("selection.changed", (event: any) => {
+      const allowedSelection = (event.newSelection || []).filter((el: any) =>
+        isElementEditable(el.id),
+      );
+
+      if (allowedSelection.length !== (event.newSelection || []).length) {
+        (modeler.get("selection") as any).select(allowedSelection);
+      }
+    });
+
+    // Prevent dragging locked elements
+    modeler.on("element.mousedown", 5000, (event: any) => {
+      if (event.element?.id && !isElementEditable(event.element.id)) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+      }
+    });
+
+    // Fallback: Block any command affecting locked elements
+    modeler.on("commandStack.preExecute", (event: any) => {
+      const ctx = event.context;
+      const elements =
+        ctx.shapes ||
+        ctx.elements ||
+        [ctx.shape, ctx.element, ctx.connection].filter(Boolean);
+
+      for (const el of elements) {
+        if (el?.id && !isElementEditable(el.id)) {
+          throw new Error(`Element ${el.id} is locked`);
+        }
+      }
+    });
+
     return () => {
-      console.log("🧹 Destroying BPMN Modeler");
       modeler.destroy();
     };
   }, [container, initialXml]);
 
-  /**
-   * Load XML from external source (e.g., another user's update)
-   * Sets guard flag to prevent triggering onChange callback
-   */
   const loadXml = useCallback(async (xml: string) => {
-    if (!modelerRef.current) {
-      console.warn("⚠️ Cannot load XML: modeler not initialized");
-      return;
-    }
+    if (!modelerRef.current) return;
 
-    // Set guard to prevent onChange from firing
     isExternalUpdateRef.current = true;
-    console.log("� Loading external XML update");
+
+    const handleImportDone = () => {
+      isExternalUpdateRef.current = false;
+      modelerRef.current?.off("import.done", handleImportDone);
+    };
+
+    modelerRef.current.on("import.done", handleImportDone);
 
     try {
       await modelerRef.current.importXML(xml);
-      console.log("✅ External XML loaded");
     } catch (error) {
-      console.error("❌ Failed to load external XML:", error);
-    } finally {
-      // Reset guard after a delay to ensure all BPMN.js events have settled
-      // BPMN.js fires commandStack events asynchronously during import
-      // TODO: Find a better event-based approach instead of timeout
-      setTimeout(() => {
-        isExternalUpdateRef.current = false;
-        console.log("🔓 Ready for local edits");
-      }, 300);
+      console.error("Failed to load external XML:", error);
+      modelerRef.current?.off("import.done", handleImportDone);
+      isExternalUpdateRef.current = false;
     }
   }, []);
 
