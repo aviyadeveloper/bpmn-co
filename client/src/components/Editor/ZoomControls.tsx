@@ -1,15 +1,10 @@
 import React from "react";
 import { BOX_SHADOW, COLORS } from "../../constants";
+import { useZoom } from "../../services/modeler/useZoom";
 
-type ZoomControlsProps = {
-  onZoomIn: () => void;
-  onZoomOut: () => void;
-};
+export const ZoomControls: React.FC = () => {
+  const { zoomIn, zoomOut } = useZoom();
 
-export const ZoomControls: React.FC<ZoomControlsProps> = ({
-  onZoomIn,
-  onZoomOut,
-}) => {
   return (
     <div
       style={{
@@ -26,7 +21,7 @@ export const ZoomControls: React.FC<ZoomControlsProps> = ({
       }}
     >
       <button
-        onClick={onZoomOut}
+        onClick={zoomOut}
         style={{
           padding: "4px 14px",
           border: "none",
@@ -40,7 +35,7 @@ export const ZoomControls: React.FC<ZoomControlsProps> = ({
         −
       </button>
       <button
-        onClick={onZoomIn}
+        onClick={zoomIn}
         style={{
           padding: "4px 14px",
           border: "none",

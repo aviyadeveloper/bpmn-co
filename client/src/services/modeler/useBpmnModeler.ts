@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import BpmnJS from "bpmn-js/lib/Modeler";
 import { useEditor } from "../editor/useEditor";
 import { canEditElement } from "../../utils";
+import { modelerStore } from "./modelerStore";
 
 type UseBpmnOptions = {
   container: HTMLDivElement | null;
@@ -42,66 +43,81 @@ export function useBpmnModeler({
     );
   }, []);
 
+  // Block interaction with locked elements
+  const blockLockedElementInteraction = useCallback(
+    (event: any) => {
+      if (event.element?.id && !isElementEditable(event.element.id)) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+      }
+    },
+    [isElementEditable],
+  );
+
+  // Setup event handlers for collaboration
+  const setupEventHandlers = useCallback(
+    (modeler: BpmnJS) => {
+      // Save changes to XML
+      modeler.on("commandStack.changed", async () => {
+        if (isExternalUpdateRef.current) return;
+        const { xml } = await modeler.saveXML({ format: true });
+        onChangeRef.current?.(xml);
+      });
+
+      // Filter selection to only editable elements
+      modeler.on("selection.changed", (event: any) => {
+        const allowed = (event.newSelection || []).filter((el: any) =>
+          isElementEditable(el.id),
+        );
+        if (allowed.length !== (event.newSelection || []).length) {
+          (modeler.get("selection") as any).select(allowed);
+        }
+      });
+
+      // Block mousedown and double-click on locked elements
+      modeler.on("element.mousedown", 5000, blockLockedElementInteraction);
+      modeler.on("element.dblclick", 5000, blockLockedElementInteraction);
+
+      // Prevent commands on locked elements
+      modeler.on("commandStack.preExecute", (event: any) => {
+        const ctx = event.context;
+        const elements =
+          ctx.shapes ||
+          ctx.elements ||
+          [ctx.shape, ctx.element, ctx.connection].filter(Boolean);
+
+        for (const el of elements) {
+          if (el?.id && !isElementEditable(el.id)) {
+            throw new Error(`Element ${el.id} is locked`);
+          }
+        }
+      });
+    },
+    [isElementEditable, blockLockedElementInteraction],
+  );
+
   // Initialize modeler
   useEffect(() => {
     if (!container) return;
 
     const modeler = new BpmnJS({ container });
     modelerRef.current = modeler;
+    modelerStore.set(modeler);
 
     modeler.importXML(initialXml).catch((error) => {
       console.error("Failed to load initial XML:", error);
     });
 
-    modeler.on("commandStack.changed", async () => {
-      if (isExternalUpdateRef.current) return;
-      const { xml } = await modeler.saveXML({ format: true });
-      onChangeRef.current?.(xml);
-    });
+    setupEventHandlers(modeler);
 
-    modeler.on("selection.changed", (event: any) => {
-      const allowed = (event.newSelection || []).filter((el: any) =>
-        isElementEditable(el.id),
-      );
-      if (allowed.length !== (event.newSelection || []).length) {
-        (modeler.get("selection") as any).select(allowed);
-      }
-    });
+    return () => {
+      modeler.destroy();
+      modelerStore.set(null);
+    };
+  }, [container, initialXml, setupEventHandlers]);
 
-    modeler.on("element.mousedown", 5000, (event: any) => {
-      if (event.element?.id && !isElementEditable(event.element.id)) {
-        event.stopPropagation();
-        event.preventDefault();
-        return false;
-      }
-    });
-
-    modeler.on("element.dblclick", 5000, (event: any) => {
-      if (event.element?.id && !isElementEditable(event.element.id)) {
-        event.stopPropagation();
-        event.preventDefault();
-        return false;
-      }
-    });
-
-    modeler.on("commandStack.preExecute", (event: any) => {
-      const ctx = event.context;
-      const elements =
-        ctx.shapes ||
-        ctx.elements ||
-        [ctx.shape, ctx.element, ctx.connection].filter(Boolean);
-
-      for (const el of elements) {
-        if (el?.id && !isElementEditable(el.id)) {
-          throw new Error(`Element ${el.id} is locked`);
-        }
-      }
-    });
-
-    return () => modeler.destroy();
-  }, [container, initialXml, isElementEditable]);
-
-  // Visual styling for locked elements
+  // Apply visual styling to locked elements
   useEffect(() => {
     if (!modelerRef.current) return;
 
@@ -120,11 +136,9 @@ export function useBpmnModeler({
           gfx.style.cursor = "";
         } else {
           gfx.style.opacity = "0.4";
-          // gfx.style.filter = "sepia(100%) hue-rotate(-50deg) saturate(5)";
           gfx.style.cursor = "not-allowed";
           gfx.querySelectorAll("*").forEach((child: any) => {
             child.style.cursor = "not-allowed";
-            child.style.border = "2px solid blue";
           });
         }
       });
@@ -156,22 +170,8 @@ export function useBpmnModeler({
     }
   }, []);
 
-  const zoomIn = useCallback(() => {
-    if (!modelerRef.current) return;
-    const zoomScroll = modelerRef.current.get("zoomScroll") as any;
-    zoomScroll.stepZoom(1);
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    if (!modelerRef.current) return;
-    const zoomScroll = modelerRef.current.get("zoomScroll") as any;
-    zoomScroll.stepZoom(-1);
-  }, []);
-
   return {
     modeler: modelerRef,
     loadXml,
-    zoomIn,
-    zoomOut,
   };
 }

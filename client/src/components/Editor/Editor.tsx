@@ -8,7 +8,6 @@ import { ZoomControls } from "./ZoomControls";
 
 export const Editor: React.FC = () => {
   const { isConnected } = useEditor();
-  const { containerRef, zoomIn, zoomOut } = Diagram();
 
   return (
     <div
@@ -20,18 +19,9 @@ export const Editor: React.FC = () => {
       }}
     >
       <Header />
-      <div
-        ref={containerRef}
-        style={{
-          flex: 1,
-          backgroundColor: "#f5f5f5",
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-        }}
-      />
+      <Diagram />
       <SideBar />
-      <ZoomControls onZoomIn={zoomIn} onZoomOut={zoomOut} />
+      <ZoomControls />
       {!isConnected && <OfflineAlert />}
     </div>
   );
