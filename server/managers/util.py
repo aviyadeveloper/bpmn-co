@@ -43,7 +43,7 @@ def generate_random_username() -> str:
         "Quick",
         "Lazy",
         "Happy",
-        "Sad",
+        "Energetic",
         "Brave",
         "Clever",
         "Witty",
@@ -64,4 +64,4 @@ def generate_random_username() -> str:
         "Shark",
     ]
 
-    return f"{random.choice(adjectives)}{random.choice(nouns)}{random.randint(1, 1000)}"
+    return f"{random.choice(adjectives)}{random.choice(nouns)}{random.randint(1, 100)}"

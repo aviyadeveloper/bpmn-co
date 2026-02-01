@@ -29,10 +29,14 @@ async def handle_initial_connection_event(
     await state_manager.add_user(user_id, generate_random_username())
 
     full_state = state_manager.get_full_state()
+    user_name = full_state["users"][user_id]
 
     # Update user
     await connection_manager.send_direct_message(
-        websocket, json.dumps({"type": "init", "user_id": user_id, **full_state})
+        websocket,
+        json.dumps(
+            {"type": "init", "user_id": user_id, "user_name": user_name, **full_state}
+        ),
     )
 
     # Update others
