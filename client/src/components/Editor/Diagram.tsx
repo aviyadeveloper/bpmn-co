@@ -28,7 +28,7 @@ export function Diagram() {
     [isConnected, sendXmlUpdate],
   );
 
-  const { modeler, loadXml } = useBpmnModeler({
+  const { modeler, loadXml, isExternalUpdateRef } = useBpmnModeler({
     container,
     initialXml: xml,
     onChange: handleXmlChange,
@@ -44,14 +44,10 @@ export function Diagram() {
     if (!modeler.current) return;
 
     const handleSelectionChange = (event: any) => {
-      if (event.newSelection && event.newSelection.length > 0) {
-        // New Elements Selected
-        const elementIds = event.newSelection.map((el: any) => el.id);
-        isConnected && sendElementSelect(elementIds);
-      } else if (event.oldSelection && event.oldSelection.length > 0) {
-        // Old Elements Deselected
-        isConnected && sendElementSelect([]);
-      }
+      if (isExternalUpdateRef.current) return;
+
+      const elementIds = (event.newSelection || []).map((el: any) => el.id);
+      isConnected && sendElementSelect(elementIds);
     };
 
     modeler.current.on("selection.changed", handleSelectionChange);
@@ -59,7 +55,7 @@ export function Diagram() {
     return () => {
       modeler.current?.off("selection.changed", handleSelectionChange);
     };
-  }, [modeler, isConnected, sendElementSelect]);
+  }, [modeler, isConnected, sendElementSelect, isExternalUpdateRef]);
 
   return (
     <div

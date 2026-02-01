@@ -173,5 +173,6 @@ export function useBpmnModeler({
   return {
     modeler: modelerRef,
     loadXml,
+    isExternalUpdateRef,
   };
 }
