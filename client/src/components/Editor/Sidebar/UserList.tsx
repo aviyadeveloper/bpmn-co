@@ -1,5 +1,6 @@
 import React from "react";
 import { useEditor } from "../../../services/editor/useEditor";
+import { COLORS } from "../../../constants";
 
 export const UserList: React.FC = () => {
   const { userId, users } = useEditor();
@@ -10,26 +11,29 @@ export const UserList: React.FC = () => {
         Online Users ({Object.keys(users).length})
       </h3>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {Object.entries(users).map((user) => (
-          <li
-            key={user[0]}
-            style={{
-              padding: "8px",
-              marginBottom: "4px",
-              backgroundColor: user[0] === userId ? "#e3f2fd" : "#fff",
-              borderRadius: "4px",
-              fontSize: "14px",
-            }}
-          >
-            {user[1]}
-            {user[0] === userId && (
-              <span style={{ color: "#1976d2", fontWeight: "bold" }}>
-                {" "}
-                (You)
-              </span>
-            )}
-          </li>
-        ))}
+        {Object.entries(users)
+          .sort(([id]) => (id === userId ? -1 : 1))
+          .map((user) => (
+            <li
+              key={user[0]}
+              style={{
+                padding: "8px",
+                marginBottom: "4px",
+                backgroundColor:
+                  user[0] === userId ? `${COLORS.BLUE}25` : "none",
+                borderRadius: "4px",
+                fontSize: "14px",
+              }}
+            >
+              {user[1]}
+              {user[0] === userId && (
+                <span style={{ color: COLORS.BLUE, fontWeight: "bold" }}>
+                  {" "}
+                  (You)
+                </span>
+              )}
+            </li>
+          ))}
       </ul>
     </div>
   );

@@ -1,8 +1,7 @@
 import React from "react";
 import { useEditor } from "../../../services/editor/useEditor";
+import { COLORS } from "../../../constants";
 export const NameControl: React.FC = ({}) => {
-  // const { sendUserNameUpdate, collaborationState } = useCollaboration();
-  // const { userId, currentUserName } = collaborationState;
   const { sendUserNameUpdate, userId, userName } = useEditor();
 
   const handleNameChange = () => {
@@ -22,6 +21,8 @@ export const NameControl: React.FC = ({}) => {
           padding: "6px 12px",
           fontSize: "14px",
           cursor: "pointer",
+          border: "none",
+          backgroundColor: COLORS.GREY,
         }}
       >
         Edit

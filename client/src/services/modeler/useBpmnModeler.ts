@@ -10,13 +10,7 @@ type UseBpmnOptions = {
 };
 
 /**
- * Manages BPMN.js modeler instance lifecycle and collaboration features.
- *
- * Handles:
- * - Modeler initialization and XML loading
- * - Local change tracking (onChange callback)
- * - External XML updates without triggering onChange (loadXml)
- * - Element locking to prevent editing locked elements
+ * Manages BPMN modeler lifecycle and collaboration features.
  */
 export function useBpmnModeler({
   container,
@@ -25,7 +19,6 @@ export function useBpmnModeler({
 }: UseBpmnOptions) {
   const modelerRef = useRef<BpmnJS | null>(null);
   const isExternalUpdateRef = useRef(false);
-
   const { userId, lockedElements } = useEditor();
 
   const onChangeRef = useRef(onChange);
@@ -41,7 +34,6 @@ export function useBpmnModeler({
     lockedElementsRef.current = lockedElements;
   }, [userId, lockedElements]);
 
-  // Helper: Check if element is editable by current user
   const isElementEditable = useCallback((elementId: string) => {
     return canEditElement(
       elementId,
@@ -50,38 +42,32 @@ export function useBpmnModeler({
     );
   }, []);
 
-  // Initialize modeler when container is available
+  // Initialize modeler
   useEffect(() => {
     if (!container) return;
 
     const modeler = new BpmnJS({ container });
     modelerRef.current = modeler;
 
-    // Import initial XML
     modeler.importXML(initialXml).catch((error) => {
       console.error("Failed to load initial XML:", error);
     });
 
-    // Listen for diagram changes from user edits
     modeler.on("commandStack.changed", async () => {
       if (isExternalUpdateRef.current) return;
-
       const { xml } = await modeler.saveXML({ format: true });
       onChangeRef.current?.(xml);
     });
 
-    // Prevent selection of locked elements
     modeler.on("selection.changed", (event: any) => {
-      const allowedSelection = (event.newSelection || []).filter((el: any) =>
+      const allowed = (event.newSelection || []).filter((el: any) =>
         isElementEditable(el.id),
       );
-
-      if (allowedSelection.length !== (event.newSelection || []).length) {
-        (modeler.get("selection") as any).select(allowedSelection);
+      if (allowed.length !== (event.newSelection || []).length) {
+        (modeler.get("selection") as any).select(allowed);
       }
     });
 
-    // Prevent dragging locked elements
     modeler.on("element.mousedown", 5000, (event: any) => {
       if (event.element?.id && !isElementEditable(event.element.id)) {
         event.stopPropagation();
@@ -90,7 +76,14 @@ export function useBpmnModeler({
       }
     });
 
-    // Fallback: Block any command affecting locked elements
+    modeler.on("element.dblclick", 5000, (event: any) => {
+      if (event.element?.id && !isElementEditable(event.element.id)) {
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+      }
+    });
+
     modeler.on("commandStack.preExecute", (event: any) => {
       const ctx = event.context;
       const elements =
@@ -105,10 +98,42 @@ export function useBpmnModeler({
       }
     });
 
-    return () => {
-      modeler.destroy();
+    return () => modeler.destroy();
+  }, [container, initialXml, isElementEditable]);
+
+  // Visual styling for locked elements
+  useEffect(() => {
+    if (!modelerRef.current) return;
+
+    const applyStyling = () => {
+      const elementRegistry = modelerRef.current!.get("elementRegistry") as any;
+      const canvas = modelerRef.current!.get("canvas") as any;
+      if (!elementRegistry || !canvas) return;
+
+      elementRegistry.getAll().forEach((element: any) => {
+        const gfx = canvas.getGraphics(element);
+        if (!gfx || !element.id) return;
+
+        if (isElementEditable(element.id)) {
+          gfx.style.opacity = "1";
+          gfx.style.filter = "";
+          gfx.style.cursor = "";
+        } else {
+          gfx.style.opacity = "0.4";
+          // gfx.style.filter = "sepia(100%) hue-rotate(-50deg) saturate(5)";
+          gfx.style.cursor = "not-allowed";
+          gfx.querySelectorAll("*").forEach((child: any) => {
+            child.style.cursor = "not-allowed";
+            child.style.border = "2px solid blue";
+          });
+        }
+      });
     };
-  }, [container, initialXml]);
+
+    applyStyling();
+    modelerRef.current.on("import.done", applyStyling);
+    return () => modelerRef.current?.off("import.done", applyStyling);
+  }, [lockedElements, userId, isElementEditable]);
 
   const loadXml = useCallback(async (xml: string) => {
     if (!modelerRef.current) return;

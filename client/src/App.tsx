@@ -1,4 +1,5 @@
 import "./App.css";
+import "@fontsource-variable/nunito";
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
 import "bpmn-js/dist/assets/bpmn-font/css/bpmn.css";

@@ -1,5 +1,6 @@
 import React from "react";
 import { useEditor } from "../../../services/editor/useEditor";
+import { COLORS } from "../../../constants";
 export const LockedElements: React.FC = () => {
   const { userId, users, lockedElements } = useEditor();
 
@@ -18,9 +19,11 @@ export const LockedElements: React.FC = () => {
                   key={lockedElement[0]}
                   style={{
                     padding: "8px",
-                    marginBottom: "4px",
-                    backgroundColor: isMe ? "#e8f5e9" : "#fff3e0",
-                    borderRadius: "4px",
+                    marginBottom: "8px",
+                    backgroundColor: isMe
+                      ? `${COLORS.GREEN}25`
+                      : `${COLORS.YELLOW}25`,
+                    borderRadius: "8px",
                     fontSize: "13px",
                   }}
                 >

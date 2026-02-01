@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from "react";
 import { useEditor } from "../../services/editor/useEditor";
 import { useBpmnModeler } from "../../services/modeler/useBpmnModeler";
+import { COLORS } from "../../constants";
 
 export function Diagram() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +66,7 @@ export function Diagram() {
       ref={containerRef}
       style={{
         flex: 1,
-        backgroundColor: "beige",
+        backgroundColor: COLORS.OFFWHITE,
         position: "absolute",
         width: "100%",
         height: "100%",

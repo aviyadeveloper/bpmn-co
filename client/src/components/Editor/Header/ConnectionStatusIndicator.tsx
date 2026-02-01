@@ -1,5 +1,6 @@
 import React from "react";
 import { useEditor } from "../../../services/editor/useEditor";
+import { COLORS } from "../../../constants";
 
 export const ConnectionStatus: React.FC = () => {
   const { isConnected } = useEditor();
@@ -8,10 +9,10 @@ export const ConnectionStatus: React.FC = () => {
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
       <div
         style={{
-          width: "16px",
-          height: "16px",
+          width: "18px",
+          height: "18px",
           borderRadius: "50%",
-          backgroundColor: isConnected ? "#4caf50" : "#f44336",
+          backgroundColor: isConnected ? COLORS.GREEN : COLORS.RED,
         }}
       />
     </div>

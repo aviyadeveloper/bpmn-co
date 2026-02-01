@@ -2,6 +2,7 @@ import React from "react";
 import { ConnectionStatus } from "./ConnectionStatusIndicator";
 import { NameControl } from "./NameControl";
 import { useEditor } from "../../../services/editor/useEditor";
+import { BOX_SHADOW, COLORS } from "../../../constants";
 
 export const Header: React.FC = () => {
   const { isConnected } = useEditor();
@@ -10,18 +11,17 @@ export const Header: React.FC = () => {
     <div
       style={{
         padding: "12px 16px",
-        borderBottom: "1px solid #ddd",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        backgroundColor: "#fff",
+        backgroundColor: `${COLORS.WHITE}`,
         position: "fixed",
         top: "1em",
         left: "1em",
         borderRadius: "8px",
         zIndex: 1000,
-        color: "#000",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        color: `${COLORS.BLACK}`,
+        boxShadow: BOX_SHADOW,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
