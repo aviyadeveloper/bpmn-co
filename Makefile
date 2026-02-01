@@ -6,3 +6,6 @@ server-test:
 
 server-test-coverage:
 	cd server && uv run pytest ./tests/ --cov=server --cov-report=html --cov-report=term
+
+client-test:
+	cd client && npm test utils

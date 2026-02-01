@@ -12,4 +12,6 @@ Don't run commands in the terminal, ask me to do that. If I will want you to run
 
 Avoid emoji's in console.logs and the likes.
 
+For tests, prefer simple atomic tests, written in Arragenge Act Assert pattern.
+
 If i start the message with "DIRECT:", then just code it without any tasklist or extra comments.
