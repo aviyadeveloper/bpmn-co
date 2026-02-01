@@ -1,6 +1,6 @@
 import React from "react";
 import { useEditor } from "../../../services/editor/useEditor";
-import { COLORS } from "../../../constants";
+import { UserItem } from "./UserItem";
 
 export const UserList: React.FC = () => {
   const { userId, users } = useEditor();
@@ -13,26 +13,13 @@ export const UserList: React.FC = () => {
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
         {Object.entries(users)
           .sort(([id]) => (id === userId ? -1 : 1))
-          .map((user) => (
-            <li
-              key={user[0]}
-              style={{
-                padding: "8px",
-                marginBottom: "4px",
-                backgroundColor:
-                  user[0] === userId ? `${COLORS.BLUE}25` : "none",
-                borderRadius: "4px",
-                fontSize: "14px",
-              }}
-            >
-              {user[1]}
-              {user[0] === userId && (
-                <span style={{ color: COLORS.BLUE, fontWeight: "bold" }}>
-                  {" "}
-                  (You)
-                </span>
-              )}
-            </li>
+          .map(([id, name]) => (
+            <UserItem
+              key={id}
+              userId={id}
+              userName={name}
+              isCurrentUser={id === userId}
+            />
           ))}
       </ul>
     </div>
